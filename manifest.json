@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "SmartSniper Pro",
-  "version": "2.0.0",
-  "description": "Enterprise coupon, cashback e arbitraggio commerciale — affiliate-first, backend-delegated, ROI netto reale.",
+  "version": "1.0.0",
+  "description": "Coupon auto-apply, cashback e arbitraggio con ROI netto reale — affiliate-first.",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -24,42 +24,32 @@
     "storage",
     "alarms",
     "notifications",
-    "declarativeNetRequest",
     "activeTab"
   ],
   "host_permissions": [
-    "https://api.smartsniper.pro/*",
     "http://127.0.0.1/*",
     "http://localhost/*",
-    "file://*/*"
+    "file://*/*",
+    "https://*.amazon.it/*",
+    "https://*.amazon.com/*",
+    "https://*.ebay.it/*",
+    "https://*.ebay.com/*",
+    "https://*.zalando.it/*",
+    "https://*.zalando.com/*"
   ],
-  "declarative_net_request": {
-    "rule_resources": [
-      {
-        "id": "affiliate_safety",
-        "enabled": true,
-        "path": "rules/affiliate_safety.json"
-      }
-    ]
-  },
   "content_scripts": [
     {
       "matches": [
         "https://*.amazon.it/*",
         "https://*.amazon.com/*",
-        "https://*.amazon.de/*",
         "https://*.ebay.it/*",
         "https://*.ebay.com/*",
         "https://*.zalando.it/*",
         "https://*.zalando.com/*",
-        "https://*.mediaworld.it/*",
-        "https://*.unieuro.it/*",
         "https://*/*checkout*",
         "https://*/*cart*",
-        "https://*/*basket*",
         "http://*/*checkout*",
         "http://*/*cart*",
-        "http://*/*basket*",
         "http://127.0.0.1/*",
         "http://localhost/*",
         "file://*/*"
@@ -76,9 +66,9 @@
     {
       "resources": [
         "icons/*",
-        "demo/*",
         "content/content.css",
-        "utils/*"
+        "utils/*",
+        "demo/*"
       ],
       "matches": [
         "<all_urls>",

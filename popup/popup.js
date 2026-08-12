@@ -1,33 +1,17 @@
-/**
- * SmartSniper Pro — Popup dashboard
- */
+/* global AffiliateRouter, ApiClient */
 (function () {
   "use strict";
 
-  var syncBtn = document.getElementById("btn-sync");
-  var syncMeta = document.getElementById("sync-meta");
   var dealsList = document.getElementById("deals-list");
-  var watchedList = document.getElementById("watched-list");
-  var couponsList = document.getElementById("coupons-list");
-  var couponsSummary = document.getElementById("coupons-summary");
-  var settingsMsg = document.getElementById("settings-msg");
-
-  function send(type, payload) {
-    return new Promise(function (resolve) {
-      chrome.runtime.sendMessage(Object.assign({ type: type }, payload || {}), function (resp) {
-        if (chrome.runtime.lastError) {
-          resolve({ ok: false, error: chrome.runtime.lastError.message });
-          return;
-        }
-        resolve(resp || { ok: false });
-      });
-    });
-  }
+  var dealsMeta = document.getElementById("deals-meta");
+  var couponList = document.getElementById("coupon-list");
+  var syncStatus = document.getElementById("sync-status");
+  var btnSync = document.getElementById("btn-sync");
+  var btnWatch = document.getElementById("btn-watch");
+  var merchantSelect = document.getElementById("coupon-merchant");
 
   function euro(n) {
-    var v = Number(n);
-    if (!Number.isFinite(v)) return "—";
-    return "€" + v.toFixed(2);
+    return "€" + Number(n || 0).toFixed(2);
   }
 
   function setTab(name) {
@@ -37,7 +21,7 @@
       tab.setAttribute("aria-selected", active ? "true" : "false");
     });
     document.querySelectorAll(".panel").forEach(function (panel) {
-      var active = panel.id === "tab-" + name;
+      var active = panel.id === "panel-" + name;
       panel.classList.toggle("active", active);
       if (active) panel.removeAttribute("hidden");
       else panel.setAttribute("hidden", "");
@@ -50,224 +34,134 @@
     });
   });
 
-  function renderDeals(state) {
-    var deals = Array.isArray(state.hotDeals) ? state.hotDeals : [];
+  function renderDeals(deals, lastSync) {
     dealsList.innerHTML = "";
-    if (!deals.length) {
-      dealsList.innerHTML =
-        '<p class="empty">Nessun hot deal con ROI netto ≥ 25%. Premi Controlla Ora o aggiungi un URL monitorato.</p>';
+    if (!deals || !deals.length) {
+      dealsList.innerHTML = '<p class="empty">Nessun hot deal con ROI netto ≥ 25%. Premi Controlla Ora.</p>';
     } else {
       deals.forEach(function (deal) {
         var arb = deal.arbitrage || {};
+        var url = deal.url || "";
+        if (!url && deal.productId === "ss-demo-sony-wh1000") {
+          url = chrome.runtime.getURL("demo/product-demo.html");
+        }
+        var aff = url
+          ? AffiliateRouter.buildUrl(url, deal.merchant, { subId: "popup_deals" })
+          : "";
         var card = document.createElement("article");
         card.className = "card";
         card.innerHTML =
-          "<h3>" +
-          escapeHtml(deal.title || "Deal") +
-          '<span class="badge">ROI ' +
-          (arb.roiNetPercent != null ? arb.roiNetPercent : "?") +
-          "%</span></h3>" +
-          "<p>" +
-          escapeHtml(deal.merchant || "") +
-          " · drop " +
-          (deal.dropPercent != null ? deal.dropPercent : "?") +
-          "%</p>" +
-          '<div class="metrics">' +
-          '<div class="metric"><b>' +
-          euro(deal.currentPrice) +
-          "</b><span>Acquisto</span></div>" +
-          '<div class="metric"><b>' +
-          euro(arb.sellNet) +
-          "</b><span>Netto vendita</span></div>" +
-          '<div class="metric"><b>' +
-          euro(arb.profit) +
-          "</b><span>Profitto</span></div>" +
-          "</div>" +
-          '<a href="' +
-          escapeHtml(deal.affiliateUrl || deal.url || "#") +
-          '" target="_blank" rel="noopener">Apri link affiliato</a>';
+          "<h3></h3>" +
+          "<p></p>" +
+          '<span class="badge"></span>' +
+          (aff ? '<div style="margin-top:8px"><a class="deal-link" target="_blank" rel="noopener"></a></div>' : "");
+        card.querySelector("h3").textContent = deal.title || "Deal";
+        card.querySelector("p").textContent =
+          "Acquisto " +
+          euro(deal.purchasePrice) +
+          " · FMV " +
+          euro(deal.fairMarketValue) +
+          " · Netto " +
+          euro(arb.profit);
+        card.querySelector(".badge").textContent = "ROI " + (arb.roiNetPercent || 0) + "%";
+        if (aff) {
+          var a = card.querySelector("a.deal-link");
+          a.href = aff;
+          a.textContent = "Apri link affiliato";
+        }
         dealsList.appendChild(card);
       });
     }
+    dealsMeta.textContent = lastSync
+      ? "Ultimo sync: " + new Date(lastSync).toLocaleString()
+      : "Nessun sync ancora";
+  }
 
-    var watched = Array.isArray(state.watchedItems) ? state.watchedItems : [];
-    watchedList.innerHTML = "";
-    if (!watched.length) {
-      watchedList.innerHTML = '<p class="empty">Nessun prodotto in watchlist.</p>';
+  function renderCoupons(coupons) {
+    couponList.innerHTML = "";
+    if (!coupons || !coupons.length) {
+      couponList.innerHTML = '<p class="empty">Nessun coupon per questo merchant.</p>';
       return;
     }
-    watched.forEach(function (item) {
+    coupons.forEach(function (c) {
       var card = document.createElement("article");
       card.className = "card";
-      card.innerHTML =
-        "<h3>" +
-        escapeHtml(item.title || "Watched") +
-        "</h3><p>" +
-        escapeHtml(item.url || "") +
-        "</p><p>Last price: " +
-        euro(item.lastPrice) +
-        " · FMV " +
-        euro(item.fairMarketValue) +
-        "</p>";
-      watchedList.appendChild(card);
+      card.innerHTML = "<h3></h3><p></p>";
+      card.querySelector("h3").textContent = c.code;
+      card.querySelector("p").textContent =
+        (c.label || c.type) +
+        (c.type === "percent" ? " · " + c.value + "%" : c.type === "fixed" ? " · " + euro(c.value) : "");
+      couponList.appendChild(card);
     });
   }
 
-  function renderCoupons(state) {
-    var deals = Array.isArray(state.sessionDeals) ? state.sessionDeals : [];
-    var saved = deals.reduce(function (acc, d) {
-      return acc + (Number(d.discount) || 0);
-    }, 0);
-    var cashback = deals.reduce(function (acc, d) {
-      var base = Number(d.discount) || 0;
-      return acc + base * ((Number(d.cashbackPercent) || 0) / 100);
-    }, 0);
-    couponsSummary.textContent =
-      deals.length +
-      " deal sessione · risparmio coupon " +
-      euro(saved) +
-      " · cashback stimato " +
-      euro(cashback);
-
-    couponsList.innerHTML = "";
-    if (!deals.length) {
-      couponsList.innerHTML =
-        '<p class="empty">Apri demo/checkout-demo.html e lancia Auto-Apply per popolare questa tab.</p>';
-      return;
-    }
-    deals.forEach(function (deal) {
-      var card = document.createElement("article");
-      card.className = "card";
-      var link = deal.affiliateUrl
-        ? '<a href="' + escapeHtml(deal.affiliateUrl) + '" target="_blank" rel="noopener">Link affiliato</a>'
-        : "";
-      card.innerHTML =
-        "<h3>" +
-        escapeHtml(deal.code || deal.type || "Deal") +
-        "</h3><p>" +
-        escapeHtml(deal.merchant || "") +
-        " · −" +
-        euro(deal.discount) +
-        " · cashback " +
-        (deal.cashbackPercent || 0) +
-        "%</p>" +
-        link;
-      couponsList.appendChild(card);
+  function loadDeals() {
+    chrome.runtime.sendMessage({ type: "SSPRO_GET_DEALS" }, function (res) {
+      if (chrome.runtime.lastError) {
+        ApiClient.getAlerts().then(function (r) {
+          renderDeals((r.data && r.data.alerts) || [], Date.now());
+        });
+        return;
+      }
+      renderDeals((res && res.deals) || [], res && res.lastSync);
     });
   }
 
-  function fillSettings(settings) {
-    settings = settings || {};
-    document.getElementById("apiMode").value = settings.apiMode || "mock";
-    document.getElementById("apiBaseUrl").value = settings.apiBaseUrl || "https://api.smartsniper.pro";
-    document.getElementById("pollMinutes").value = settings.pollMinutes || 15;
-    document.getElementById("defaultSubId").value = settings.defaultSubId || "organic";
-    var aff = Object.assign({}, AffiliateRouter.DEFAULT_CONFIG, settings.affiliate || {});
-    document.getElementById("amazonTag").value = aff.amazonTag || "";
-    document.getElementById("awinPublisherId").value = aff.awinPublisherId || "";
-    document.getElementById("ebayCampaignId").value = aff.ebayCampaignId || "";
-    document.getElementById("telegramEnabled").checked = !!settings.telegramEnabled;
-    document.getElementById("telegramBotToken").value = settings.telegramBotToken || "";
-    document.getElementById("telegramChatId").value = settings.telegramChatId || "";
-    document.getElementById("discordEnabled").checked = !!settings.discordEnabled;
-    document.getElementById("discordWebhookUrl").value = settings.discordWebhookUrl || "";
+  function loadCoupons() {
+    var merchant = merchantSelect.value || "demo";
+    chrome.runtime.sendMessage({ type: "SSPRO_GET_COUPONS", merchant: merchant, force: true }, function (res) {
+      if (chrome.runtime.lastError || !res || !res.ok) {
+        ApiClient.getCoupons(merchant, { force: true }).then(function (r) {
+          renderCoupons((r.data && r.data.coupons) || []);
+        });
+        return;
+      }
+      renderCoupons(res.coupons || []);
+    });
   }
 
-  function escapeHtml(s) {
-    return String(s || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
-  async function refresh() {
-    var resp = await send("GET_STATE");
-    if (!resp.ok) {
-      syncMeta.textContent = "Errore stato: " + (resp.error || "unknown");
-      return;
-    }
-    var state = resp.state || {};
-    renderDeals(state);
-    renderCoupons(state);
-    fillSettings(state.settings || {});
-    var meta = state.lastSyncMeta || {};
-    syncMeta.textContent =
-      "Ultimo sync: " +
-      (state.lastSyncAt || "mai") +
-      " · source " +
-      (meta.source || "—") +
-      " · alert " +
-      (meta.count != null ? meta.count : "—");
-  }
-
-  syncBtn.addEventListener("click", async function () {
-    syncBtn.disabled = true;
-    syncBtn.textContent = "Sync…";
-    var result = await send("SYNC_NOW", { forceNotify: true });
-    syncBtn.disabled = false;
-    syncBtn.textContent = "Controlla Ora";
-    if (!result.ok) {
-      syncMeta.textContent = "Sync fallita: " + (result.error || "unknown");
-      return;
-    }
-    await refresh();
-    syncMeta.textContent += " · fresh " + (result.fresh || 0);
+  btnSync.addEventListener("click", function () {
+    btnSync.disabled = true;
+    syncStatus.textContent = "Sync in corso…";
+    chrome.runtime.sendMessage({ type: "SSPRO_SYNC_NOW" }, function (res) {
+      btnSync.disabled = false;
+      if (chrome.runtime.lastError || !res || !res.ok) {
+        syncStatus.textContent = "Sync fallita";
+        return;
+      }
+      syncStatus.textContent = "Trovati " + (res.count || 0) + " deal qualificati";
+      renderDeals(res.deals || [], Date.now());
+    });
   });
 
-  document.getElementById("watch-form").addEventListener("submit", async function (ev) {
-    ev.preventDefault();
+  btnWatch.addEventListener("click", function () {
     var url = document.getElementById("watch-url").value.trim();
-    var title = document.getElementById("watch-title").value.trim();
-    var resp = await send("WATCH_URL", { url: url, title: title });
-    if (!resp.ok) {
-      syncMeta.textContent = "Watch error: " + (resp.error || "unknown");
+    var buy = Number(document.getElementById("watch-buy").value);
+    var fmv = Number(document.getElementById("watch-fmv").value);
+    if (!url) {
+      syncStatus.textContent = "Inserisci un URL valido";
       return;
     }
-    document.getElementById("watch-url").value = "";
-    document.getElementById("watch-title").value = "";
-    await refresh();
-  });
-
-  document.getElementById("settings-form").addEventListener("submit", async function (ev) {
-    ev.preventDefault();
-    var settings = {
-      apiMode: document.getElementById("apiMode").value,
-      apiBaseUrl: document.getElementById("apiBaseUrl").value.trim(),
-      pollMinutes: Number(document.getElementById("pollMinutes").value) || 15,
-      defaultSubId: document.getElementById("defaultSubId").value.trim() || "organic",
-      affiliate: {
-        amazonTag: document.getElementById("amazonTag").value.trim(),
-        awinPublisherId: document.getElementById("awinPublisherId").value.trim(),
-        ebayCampaignId: document.getElementById("ebayCampaignId").value.trim()
-      },
-      telegramEnabled: document.getElementById("telegramEnabled").checked,
-      telegramBotToken: document.getElementById("telegramBotToken").value.trim(),
-      telegramChatId: document.getElementById("telegramChatId").value.trim(),
-      discordEnabled: document.getElementById("discordEnabled").checked,
-      discordWebhookUrl: document.getElementById("discordWebhookUrl").value.trim()
+    var payload = {
+      url: url,
+      merchant: AffiliateRouter.detectMerchant(url),
+      purchasePrice: Number.isFinite(buy) ? buy : undefined,
+      fairMarketValue: Number.isFinite(fmv) ? fmv : undefined,
+      title: url,
+      productId: "watch-" + Date.now()
     };
-    var resp = await send("SAVE_SETTINGS", { settings: settings });
-    settingsMsg.textContent = resp.ok ? "Settings salvate." : "Errore salvataggio.";
-    await refresh();
+    chrome.runtime.sendMessage({ type: "SSPRO_ADD_WATCH", payload: payload }, function (res) {
+      if (chrome.runtime.lastError || !res || !res.ok) {
+        syncStatus.textContent = "Watchlist non salvata";
+        return;
+      }
+      syncStatus.textContent = "URL aggiunto al monitor";
+      document.getElementById("watch-url").value = "";
+    });
   });
 
-  document.getElementById("btn-test-webhook").addEventListener("click", async function () {
-    settingsMsg.textContent = "Invio test…";
-    var resp = await send("TEST_WEBHOOK");
-    if (!resp.ok) {
-      settingsMsg.textContent = "Test fallito: " + (resp.error || "unknown");
-      return;
-    }
-    var d = resp.delivered || {};
-    settingsMsg.textContent =
-      "Test ok · telegram=" +
-      !!(d.telegram) +
-      " · discord=" +
-      !!(d.discord) +
-      " · mock=" +
-      !!(d.mock && d.mock.ok);
-  });
+  merchantSelect.addEventListener("change", loadCoupons);
 
-  refresh();
+  loadDeals();
+  loadCoupons();
 })();

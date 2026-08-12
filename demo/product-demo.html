@@ -11,7 +11,7 @@
     :root {
       --bg: #0e131a;
       --card: #171e28;
-      --line: rgba(255,255,255,0.08);
+      --line: rgba(255, 255, 255, 0.08);
       --text: #e8eef7;
       --muted: #93a1b2;
       --accent: #00d4aa;
@@ -21,7 +21,7 @@
       margin: 0;
       font-family: "Segoe UI", Helvetica, Arial, sans-serif;
       background:
-        radial-gradient(900px 400px at 0% 0%, rgba(0,212,170,0.15), transparent 50%),
+        radial-gradient(900px 400px at 0% 0%, rgba(0, 212, 170, 0.15), transparent 50%),
         var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -62,9 +62,6 @@
       background: linear-gradient(180deg, #1dffc2, #00d4aa);
       color: #04110d;
     }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
-    th { color: var(--muted); font-weight: 600; }
     .hint { margin-top: 14px; color: var(--muted); font-size: 13px; line-height: 1.45; }
   </style>
 </head>
@@ -72,7 +69,7 @@
   <div class="wrap">
     <p class="eyebrow">PRODUCT DEMO · SMARTSNIPER PRO</p>
     <h1 id="product-title">Sony WH-1000XM5 Noise Cancelling</h1>
-    <p class="sub">Metadati prezzo + storico per testare watchlist, ROI netto e notifiche backend-driven.</p>
+    <p class="sub">Metadati prezzo per testare watchlist, ROI netto e notifiche.</p>
 
     <div class="grid">
       <section class="card">
@@ -81,7 +78,7 @@
           <div class="was">€379.00</div>
         </div>
         <p>Fair Market Value eBay/Vinted (mock): <strong>€410</strong></p>
-        <p>Spedizione inbound stimata: <strong>€4.90</strong> · outbound rivendita: <strong>€6.50</strong></p>
+        <p>Spedizione inbound: <strong>€4.90</strong> · outbound rivendita: <strong>€6.50</strong></p>
         <div class="hint">
           ROI netto = (410 − 13% − 6.50 − (278 + 4.90)) / (278 + 4.90). Se &lt; 25% l’alert non parte.
         </div>
@@ -91,43 +88,25 @@
         <label for="price-input">Simula nuovo prezzo (€)</label>
         <input id="price-input" type="number" min="1" step="0.01" value="278" />
         <button id="update-price" type="button">Aggiorna prezzo sulla pagina</button>
-        <p class="hint">Dopo l’update: popup → aggiungi questo URL al monitor → Controlla Ora.</p>
+        <p class="hint">Poi: popup → incolla questo URL nel monitor → Controlla Ora.</p>
       </section>
     </div>
-
-    <section class="card" style="margin-top:18px;">
-      <h2 style="margin:0 0 10px; font-size:16px;">Storico prezzi</h2>
-      <table>
-        <thead><tr><th>Data</th><th>Prezzo</th></tr></thead>
-        <tbody id="history-body">
-          <tr><td>2026-07-01</td><td>€379.00</td></tr>
-          <tr><td>2026-07-15</td><td>€349.00</td></tr>
-          <tr><td>2026-08-01</td><td>€299.00</td></tr>
-          <tr><td>2026-08-10</td><td>€278.00</td></tr>
-        </tbody>
-      </table>
-    </section>
   </div>
 
   <script>
     (function () {
       var priceEl = document.getElementById("product-price");
       var input = document.getElementById("price-input");
-      var historyBody = document.getElementById("history-body");
       document.getElementById("update-price").addEventListener("click", function () {
         var value = Number(input.value);
         if (!Number.isFinite(value) || value <= 0) return;
-        var formatted = "€" + value.toFixed(2);
-        priceEl.textContent = formatted;
         priceEl.setAttribute("data-price", String(value));
-        var meta1 = document.querySelector('meta[itemprop="price"]');
-        var meta2 = document.querySelector('meta[property="product:price:amount"]');
-        if (meta1) meta1.setAttribute("content", String(value));
-        if (meta2) meta2.setAttribute("content", String(value));
-        var tr = document.createElement("tr");
-        var today = new Date().toISOString().slice(0, 10);
-        tr.innerHTML = "<td>" + today + "</td><td>" + formatted + "</td>";
-        historyBody.appendChild(tr);
+        priceEl.setAttribute("content", String(value));
+        priceEl.textContent = "€" + value.toFixed(2);
+        var meta = document.querySelector('meta[property="product:price:amount"]');
+        if (meta) meta.setAttribute("content", String(value));
+        var item = document.querySelector('meta[itemprop="price"]');
+        if (item) item.setAttribute("content", String(value));
       });
     })();
   </script>

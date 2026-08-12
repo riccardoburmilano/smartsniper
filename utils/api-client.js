@@ -1,7 +1,6 @@
 /**
- * SmartSniper Pro — ApiClient + ArbitrageCalculator + in-extension Mock Backend
- * Browser never scrapes merchant pages aggressively; all price intelligence is
- * requested from the backend (mocked locally with SWR cache when offline/unreachable).
+ * SmartSniper Pro — ApiClient + ArbitrageCalculator
+ * Mock backend with Stale-While-Revalidate local cache.
  */
 (function (root) {
   "use strict";
@@ -15,8 +14,6 @@
     amazon: 0,
     ebay: 6.9,
     zalando: 0,
-    mediaworld: 5.99,
-    unieuro: 5.99,
     demo: 4.9,
     unknown: 7.5
   };
@@ -33,12 +30,8 @@
 
   function toNum(v, fallback) {
     var n = Number(v);
-    return Number.isFinite(n) ? n : (fallback || 0);
+    return Number.isFinite(n) ? n : fallback || 0;
   }
-
-  /* -------------------------------------------------------------------------- */
-  /* Real-world arbitrage calculator                                            */
-  /* -------------------------------------------------------------------------- */
 
   var ArbitrageCalculator = {
     PLATFORM_FEE_RATE: PLATFORM_FEE_RATE,
@@ -84,9 +77,8 @@
         roiNetPercent: round2(roiNet * 100),
         qualifies: roiNet >= MIN_NET_ROI,
         minRoiRequired: MIN_NET_ROI,
-        minRoiPercent: MIN_NET_ROI * 100,
         formula:
-          "ROI = (FMV - 13% platform fees - seller shipping - (purchase + inbound shipping)) / (purchase + inbound shipping)"
+          "ROI = (FMV - 13% fees - outbound shipping - (purchase + inbound)) / (purchase + inbound)"
       };
     },
 
@@ -94,10 +86,6 @@
       return ArbitrageCalculator.calculate(input).qualifies;
     }
   };
-
-  /* -------------------------------------------------------------------------- */
-  /* Mock backend dataset                                                       */
-  /* -------------------------------------------------------------------------- */
 
   var MOCK_CATALOG = {
     "ss-demo-sony-wh1000": {
@@ -111,412 +99,252 @@
       inboundShipping: 4.9,
       outboundShipping: 6.5,
       sizeClass: "small",
-      currency: "EUR",
-      history: [
-        { t: "2026-07-01", p: 379 },
-        { t: "2026-07-15", p: 349 },
-        { t: "2026-08-01", p: 299 },
-        { t: "2026-08-10", p: 278 }
-      ]
+      currency: "EUR"
     },
-    "ss-demo-dyson-v15": {
-      productId: "ss-demo-dyson-v15",
-      title: "Dyson V15 Detect Absolute",
-      merchant: "demo",
-      url: "",
-      currentPrice: 549,
-      previousPrice: 749,
-      fairMarketValue: 620,
+    "ss-demo-airpods4": {
+      productId: "ss-demo-airpods4",
+      title: "Apple AirPods 4",
+      merchant: "amazon",
+      url: "https://www.amazon.it/dp/B0DGHWD7CT",
+      currentPrice: 89.89,
+      previousPrice: 149,
+      fairMarketValue: 145,
       inboundShipping: 0,
-      outboundShipping: 14.9,
-      sizeClass: "bulky",
-      currency: "EUR",
-      history: [
-        { t: "2026-06-01", p: 749 },
-        { t: "2026-07-01", p: 699 },
-        { t: "2026-08-01", p: 599 },
-        { t: "2026-08-11", p: 549 }
-      ]
+      outboundShipping: 4.5,
+      sizeClass: "small",
+      currency: "EUR"
+    },
+    "ss-demo-campus00s": {
+      productId: "ss-demo-campus00s",
+      title: "adidas Originals Campus 00s",
+      merchant: "zalando",
+      url: "https://www.zalando.it/adidas-originals-campus-00s-unisex-sneakers-basse-ad115o1tp-n11.html",
+      currentPrice: 65.99,
+      previousPrice: 119.99,
+      fairMarketValue: 110,
+      inboundShipping: 0,
+      outboundShipping: 4.5,
+      sizeClass: "small",
+      currency: "EUR"
     }
   };
 
   var MOCK_COUPONS = {
     amazon: [
-      { code: "SAVE15AMZ", type: "percent", value: 15, cashbackPercent: 2, label: "15% Amazon cart" },
-      { code: "FREESHIP", type: "shipping", value: 0, cashbackPercent: 1, label: "Spedizione gratis" }
+      { code: "SAVE15AMZ", type: "percent", value: 15, label: "15% Amazon cart" },
+      { code: "FREESHIP", type: "shipping", value: 0, label: "Spedizione gratis" }
     ],
     ebay: [
-      { code: "EBAY10OFF", type: "percent", value: 10, cashbackPercent: 1.5, label: "10% eBay" },
-      { code: "EBAY5EUR", type: "fixed", value: 5, cashbackPercent: 1, label: "5€ eBay" }
+      { code: "EBAY10OFF", type: "percent", value: 10, label: "10% eBay" },
+      { code: "EBAY5EUR", type: "fixed", value: 5, label: "5€ eBay" }
     ],
     zalando: [
-      { code: "ZALANDO20", type: "percent", value: 20, cashbackPercent: 3, label: "20% Zalando" },
-      { code: "STYLE5", type: "fixed", value: 5, cashbackPercent: 2, label: "5€ Zalando" }
-    ],
-    mediaworld: [
-      { code: "MW15TECH", type: "percent", value: 15, cashbackPercent: 2, label: "15% MediaWorld" },
-      { code: "MW10EUR", type: "fixed", value: 10, cashbackPercent: 1, label: "10€ MediaWorld" }
-    ],
-    unieuro: [
-      { code: "UNI12", type: "percent", value: 12, cashbackPercent: 2, label: "12% Unieuro" },
-      { code: "UNI8EUR", type: "fixed", value: 8, cashbackPercent: 1, label: "8€ Unieuro" }
+      { code: "ZALANDO20", type: "percent", value: 20, label: "20% Zalando" }
     ],
     demo: [
-      { code: "SNIPER25", type: "percent", value: 25, cashbackPercent: 4, label: "25% Demo max" },
-      { code: "SNIPER10", type: "percent", value: 10, cashbackPercent: 2, label: "10% Demo" },
-      { code: "FLAT15", type: "fixed", value: 15, cashbackPercent: 3, label: "15€ fisso Demo" },
-      { code: "DEADCODE", type: "percent", value: 0, cashbackPercent: 0, label: "Codice invalido" }
+      { code: "SNIPER25", type: "percent", value: 25, label: "25% SmartSniper demo" },
+      { code: "SNIPER10", type: "percent", value: 10, label: "10% SmartSniper demo" },
+      { code: "SHIPFREE", type: "shipping", value: 0, label: "Spedizione gratis demo" }
     ]
   };
 
-  function hashUrl(url) {
-    var s = String(url || "");
-    var h = 0;
-    for (var i = 0; i < s.length; i++) {
-      h = (h << 5) - h + s.charCodeAt(i);
-      h |= 0;
-    }
-    return "url_" + Math.abs(h);
+  var memoryCache = Object.create(null);
+
+  function cacheKey(method, path, body) {
+    return method + "::" + path + "::" + JSON.stringify(body || null);
   }
 
-  function resolveProductFromUrl(url) {
-    var lower = String(url || "").toLowerCase();
-    if (lower.indexOf("product-demo") !== -1 || lower.indexOf("sony") !== -1) {
-      var p = Object.assign({}, MOCK_CATALOG["ss-demo-sony-wh1000"]);
-      p.url = url;
-      return p;
-    }
-    if (lower.indexOf("dyson") !== -1) {
-      var d = Object.assign({}, MOCK_CATALOG["ss-demo-dyson-v15"]);
-      d.url = url;
-      return d;
-    }
-    var synthetic = {
-      productId: hashUrl(url),
-      title: "Tracked product",
-      merchant:
-        root.AffiliateRouter && root.AffiliateRouter.detectMerchant
-          ? root.AffiliateRouter.detectMerchant(url)
-          : "unknown",
-      url: url,
-      currentPrice: 199,
-      previousPrice: 249,
-      fairMarketValue: 280,
-      inboundShipping: null,
-      outboundShipping: 6.5,
-      sizeClass: "default",
-      currency: "EUR",
-      history: [
-        { t: "2026-07-01", p: 249 },
-        { t: "2026-08-01", p: 219 },
-        { t: "2026-08-12", p: 199 }
-      ]
-    };
-    return synthetic;
-  }
-
-  function enrichWithArbitrage(product) {
-    var arb = ArbitrageCalculator.calculate({
-      purchasePrice: product.currentPrice,
-      fairMarketValue: product.fairMarketValue,
-      merchant: product.merchant,
-      inboundShipping: product.inboundShipping,
-      outboundShipping: product.outboundShipping,
-      sizeClass: product.sizeClass
-    });
-    var dropPercent =
-      product.previousPrice > 0
-        ? round2(((product.previousPrice - product.currentPrice) / product.previousPrice) * 100)
-        : 0;
-    return Object.assign({}, product, {
-      dropPercent: dropPercent,
-      arbitrage: arb,
-      alertEligible: arb.qualifies
-    });
-  }
-
-  /* -------------------------------------------------------------------------- */
-  /* SWR cache                                                                  */
-  /* -------------------------------------------------------------------------- */
-
-  var memoryCache = {};
-
-  function cacheGet(key) {
-    return memoryCache[key] || null;
-  }
-
-  function cacheSet(key, data) {
-    memoryCache[key] = { data: data, storedAt: Date.now() };
-    return memoryCache[key];
-  }
-
-  function isFresh(entry) {
-    return entry && Date.now() - entry.storedAt < SWR_TTL_MS;
-  }
-
-  function isUsableStale(entry) {
-    return entry && Date.now() - entry.storedAt < SWR_STALE_MS;
-  }
-
-  /* -------------------------------------------------------------------------- */
-  /* Mock HTTP router                                                           */
-  /* -------------------------------------------------------------------------- */
-
-  function mockDelay(ms) {
+  function readStorageCache(key) {
     return new Promise(function (resolve) {
-      setTimeout(resolve, ms || 40);
+      if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local) {
+        resolve(memoryCache[key] || null);
+        return;
+      }
+      chrome.storage.local.get(["sspro_swr_cache"], function (data) {
+        var bag = data.sspro_swr_cache || {};
+        resolve(bag[key] || memoryCache[key] || null);
+      });
     });
   }
 
-  async function mockBackend(method, path, body, watchedItems) {
-    await mockDelay(35);
-    var parts = String(path || "").split("?")[0];
+  function writeStorageCache(key, entry) {
+    memoryCache[key] = entry;
+    return new Promise(function (resolve) {
+      if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local) {
+        resolve();
+        return;
+      }
+      chrome.storage.local.get(["sspro_swr_cache"], function (data) {
+        var bag = data.sspro_swr_cache || {};
+        bag[key] = entry;
+        chrome.storage.local.set({ sspro_swr_cache: bag }, function () {
+          resolve();
+        });
+      });
+    });
+  }
 
-    if (method === "GET" && parts === "/v1/health") {
+  function mockLatency() {
+    return new Promise(function (resolve) {
+      setTimeout(resolve, 40 + Math.floor(Math.random() * 80));
+    });
+  }
+
+  function mockHandler(path, body) {
+    if (path === "/v1/health") {
       return { ok: true, mode: "mock", ts: Date.now() };
     }
 
-    if (method === "GET" && parts === "/v1/coupons") {
-      var q = new URLSearchParams(String(path).split("?")[1] || "");
-      var merchant = (q.get("merchant") || "demo").toLowerCase();
+    if (path.indexOf("/v1/coupons") === 0) {
+      var merchant = "demo";
+      var q = path.split("?")[1] || "";
+      q.split("&").forEach(function (pair) {
+        var parts = pair.split("=");
+        if (parts[0] === "merchant") merchant = decodeURIComponent(parts[1] || "demo");
+      });
       return {
         merchant: merchant,
-        coupons: MOCK_COUPONS[merchant] || MOCK_COUPONS.demo,
-        cashbackDefaultPercent: 2
+        coupons: MOCK_COUPONS[merchant] || MOCK_COUPONS.demo
       };
     }
 
-    if (method === "POST" && parts === "/v1/price/quote") {
-      var url = body && body.url;
-      var product = enrichWithArbitrage(resolveProductFromUrl(url));
-      if (body && body.currentPriceHint != null) {
-        product.currentPrice = toNum(body.currentPriceHint, product.currentPrice);
-        product = enrichWithArbitrage(product);
+    if (path === "/v1/price/quote") {
+      var productId = (body && body.productId) || "ss-demo-sony-wh1000";
+      var item = MOCK_CATALOG[productId];
+      if (!item) {
+        item = {
+          productId: productId,
+          title: (body && body.title) || "Unknown product",
+          merchant: (body && body.merchant) || "unknown",
+          url: (body && body.url) || "",
+          currentPrice: toNum(body && body.purchasePrice, 0),
+          fairMarketValue: toNum(body && body.fairMarketValue, 0),
+          inboundShipping: null,
+          outboundShipping: null,
+          sizeClass: "default",
+          currency: "EUR"
+        };
       }
-      return { product: product, source: "mock-proxy", cached: false };
-    }
+      if (body && body.purchasePrice != null) item.currentPrice = toNum(body.purchasePrice);
+      if (body && body.fairMarketValue != null) item.fairMarketValue = toNum(body.fairMarketValue);
+      if (body && body.url) item.url = body.url;
 
-    if (method === "GET" && parts === "/v1/alerts") {
-      var items = Array.isArray(watchedItems) ? watchedItems : [];
-      var alerts = [];
-      for (var i = 0; i < items.length; i++) {
-        var item = items[i];
-        var quoted = enrichWithArbitrage(
-          Object.assign(resolveProductFromUrl(item.url), {
-            currentPrice: item.lastPrice != null ? item.lastPrice : undefined,
-            title: item.title || undefined,
-            merchant: item.merchant || undefined,
-            fairMarketValue: item.fairMarketValue || undefined
-          })
-        );
-        if (item.overridePrice != null) {
-          quoted.currentPrice = toNum(item.overridePrice);
-          quoted = enrichWithArbitrage(quoted);
-        }
-        if (quoted.alertEligible) {
-          var affiliateUrl =
-            root.AffiliateRouter && root.AffiliateRouter.buildAffiliateUrl
-              ? root.AffiliateRouter.buildAffiliateUrl(quoted.url || item.url, quoted.merchant, {
-                  subId: "alert_" + quoted.productId
-                })
-              : quoted.url || item.url;
-          alerts.push({
-            id: "alert_" + quoted.productId + "_" + Date.now(),
-            productId: quoted.productId,
-            title: quoted.title || item.title || "Deal",
-            merchant: quoted.merchant,
-            url: quoted.url || item.url,
-            affiliateUrl: affiliateUrl,
-            currentPrice: quoted.currentPrice,
-            previousPrice: quoted.previousPrice,
-            dropPercent: quoted.dropPercent,
-            arbitrage: quoted.arbitrage,
-            createdAt: new Date().toISOString()
-          });
-        }
-      }
+      var arb = ArbitrageCalculator.calculate({
+        purchasePrice: item.currentPrice,
+        fairMarketValue: item.fairMarketValue,
+        merchant: item.merchant,
+        inboundShipping: item.inboundShipping,
+        outboundShipping: item.outboundShipping,
+        sizeClass: item.sizeClass
+      });
 
-      if (alerts.length === 0) {
-        var demo = enrichWithArbitrage(MOCK_CATALOG["ss-demo-sony-wh1000"]);
-        if (demo.alertEligible) {
-          var demoUrl = "http://127.0.0.1:8765/demo/product-demo.html";
-          alerts.push({
-            id: "alert_demo_seed",
-            productId: demo.productId,
-            title: demo.title,
-            merchant: "demo",
-            url: demoUrl,
-            affiliateUrl:
-              root.AffiliateRouter && root.AffiliateRouter.buildAffiliateUrl
-                ? root.AffiliateRouter.buildAffiliateUrl(demoUrl, "demo", { subId: "seed_hotdeal" })
-                : demoUrl,
-            currentPrice: demo.currentPrice,
-            previousPrice: demo.previousPrice,
-            dropPercent: demo.dropPercent,
-            arbitrage: demo.arbitrage,
-            createdAt: new Date().toISOString(),
-            seeded: true
-          });
-        }
-      }
-
-      return { alerts: alerts, polledAt: new Date().toISOString(), source: "mock" };
-    }
-
-    if (method === "POST" && parts === "/v1/watch") {
-      var watchProduct = enrichWithArbitrage(resolveProductFromUrl(body && body.url));
       return {
-        ok: true,
-        watched: {
-          id: watchProduct.productId,
-          url: body.url,
-          title: (body && body.title) || watchProduct.title,
-          merchant: watchProduct.merchant,
-          lastPrice: watchProduct.currentPrice,
-          fairMarketValue: watchProduct.fairMarketValue,
-          addedAt: new Date().toISOString()
-        }
+        product: item,
+        arbitrage: arb,
+        quotedAt: new Date().toISOString()
       };
     }
 
-    if (method === "POST" && parts === "/v1/webhooks/dispatch") {
-      return {
-        ok: true,
-        delivered: {
-          telegram: !!(body && body.telegramEnabled && body.telegramBotToken && body.telegramChatId),
-          discord: !!(body && body.discordEnabled && body.discordWebhookUrl)
-        },
-        preview: body && body.payload ? body.payload : null
-      };
+    if (path === "/v1/alerts") {
+      var alerts = Object.keys(MOCK_CATALOG).map(function (id) {
+        var p = MOCK_CATALOG[id];
+        var a = ArbitrageCalculator.calculate({
+          purchasePrice: p.currentPrice,
+          fairMarketValue: p.fairMarketValue,
+          merchant: p.merchant,
+          inboundShipping: p.inboundShipping,
+          outboundShipping: p.outboundShipping,
+          sizeClass: p.sizeClass
+        });
+        return {
+          productId: p.productId,
+          title: p.title,
+          merchant: p.merchant,
+          url: p.url,
+          purchasePrice: p.currentPrice,
+          fairMarketValue: p.fairMarketValue,
+          currency: p.currency,
+          arbitrage: a
+        };
+      }).filter(function (row) {
+        return row.arbitrage.qualifies;
+      });
+      return { alerts: alerts, generatedAt: new Date().toISOString() };
     }
 
-    return { error: "not_found", path: parts, status: 404 };
+    if (path === "/v1/watch") {
+      return { ok: true, watched: body || {}, savedAt: new Date().toISOString() };
+    }
+
+    return { ok: false, error: "unknown_endpoint", path: path };
   }
 
-  /* -------------------------------------------------------------------------- */
-  /* Public ApiClient                                                           */
-  /* -------------------------------------------------------------------------- */
+  function request(method, path, body, opts) {
+    opts = opts || {};
+    var key = cacheKey(method, path, body);
+    var force = !!opts.force;
+
+    return readStorageCache(key).then(function (cached) {
+      var now = Date.now();
+      var fresh = cached && now - cached.storedAt < SWR_TTL_MS;
+      var usable = cached && now - cached.storedAt < SWR_STALE_MS;
+
+      if (!force && fresh) {
+        return Promise.resolve({
+          data: cached.data,
+          cache: "fresh",
+          storedAt: cached.storedAt
+        });
+      }
+
+      var network = mockLatency().then(function () {
+        var data = mockHandler(path, body);
+        var entry = { data: data, storedAt: Date.now() };
+        return writeStorageCache(key, entry).then(function () {
+          return { data: data, cache: "network", storedAt: entry.storedAt };
+        });
+      });
+
+      if (!force && usable) {
+        network.catch(function () {});
+        return Promise.resolve({
+          data: cached.data,
+          cache: "stale",
+          storedAt: cached.storedAt
+        });
+      }
+
+      return network;
+    });
+  }
 
   var ApiClient = {
-    DEFAULT_BASE: "https://api.smartsniper.pro",
-    MOCK_MODE_KEY: "apiMode",
-
-    getSettings: async function () {
-      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
-        var data = await chrome.storage.local.get(["settings"]);
-        return data.settings || {};
-      }
-      return {};
-    },
-
-    getWatchedItems: async function () {
-      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
-        var data = await chrome.storage.local.get(["watchedItems"]);
-        return Array.isArray(data.watchedItems) ? data.watchedItems : [];
-      }
-      return [];
-    },
-
-    resolveBaseUrl: async function () {
-      var settings = await ApiClient.getSettings();
-      if (settings.apiBaseUrl) return String(settings.apiBaseUrl).replace(/\/$/, "");
-      return ApiClient.DEFAULT_BASE;
-    },
-
-    isMockForced: async function () {
-      var settings = await ApiClient.getSettings();
-      if (settings.apiMode === "live") return false;
-      if (settings.apiMode === "mock") return true;
-      return true;
-    },
-
-    request: async function (method, path, body) {
-      var cacheKey = method + ":" + path + ":" + JSON.stringify(body || {});
-      var cached = cacheGet(cacheKey);
-      if (isFresh(cached)) {
-        return Object.assign({}, cached.data, { _cache: "fresh" });
-      }
-
-      var watched = await ApiClient.getWatchedItems();
-      var useMock = await ApiClient.isMockForced();
-      var base = await ApiClient.resolveBaseUrl();
-
-      if (!useMock) {
-        try {
-          var controller = typeof AbortController !== "undefined" ? new AbortController() : null;
-          var timer = null;
-          if (controller) {
-            timer = setTimeout(function () {
-              controller.abort();
-            }, 4000);
-          }
-          var response = await fetch(base + path, {
-            method: method,
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-              "X-SmartSniper-Client": "pro-extension"
-            },
-            body: method === "GET" || method === "HEAD" ? undefined : JSON.stringify(body || {}),
-            signal: controller ? controller.signal : undefined
-          });
-          if (timer) clearTimeout(timer);
-          if (response.ok) {
-            var json = await response.json();
-            cacheSet(cacheKey, json);
-            return Object.assign({}, json, { _cache: "network" });
-          }
-        } catch (networkErr) {
-          if (isUsableStale(cached)) {
-            return Object.assign({}, cached.data, { _cache: "stale-while-revalidate", _offline: true });
-          }
-        }
-      }
-
-      var mocked = await mockBackend(method, path, body, watched);
-      cacheSet(cacheKey, mocked);
-      if (isUsableStale(cached) && cached.data) {
-        return Object.assign({}, mocked, { _cache: "revalidated" });
-      }
-      return Object.assign({}, mocked, { _cache: useMock ? "mock" : "mock-fallback" });
-    },
-
     getHealth: function () {
-      return ApiClient.request("GET", "/v1/health");
+      return request("GET", "/v1/health");
     },
-
-    getCoupons: function (merchant) {
-      return ApiClient.request("GET", "/v1/coupons?merchant=" + encodeURIComponent(merchant || "demo"));
+    getCoupons: function (merchant, opts) {
+      return request("GET", "/v1/coupons?merchant=" + encodeURIComponent(merchant || "demo"), null, opts);
     },
-
-    quotePrice: function (url, currentPriceHint) {
-      return ApiClient.request("POST", "/v1/price/quote", {
-        url: url,
-        currentPriceHint: currentPriceHint
-      });
+    quotePrice: function (payload, opts) {
+      return request("POST", "/v1/price/quote", payload || {}, opts);
     },
-
-    getAlerts: function () {
-      return ApiClient.request("GET", "/v1/alerts");
+    getAlerts: function (opts) {
+      return request("GET", "/v1/alerts", null, opts);
     },
-
-    watchProduct: function (url, title) {
-      return ApiClient.request("POST", "/v1/watch", { url: url, title: title });
+    watch: function (payload, opts) {
+      return request("POST", "/v1/watch", payload || {}, opts);
     },
-
-    dispatchWebhook: function (payload, settings) {
-      return ApiClient.request("POST", "/v1/webhooks/dispatch", {
-        telegramEnabled: !!(settings && settings.telegramEnabled),
-        telegramBotToken: settings && settings.telegramBotToken,
-        telegramChatId: settings && settings.telegramChatId,
-        discordEnabled: !!(settings && settings.discordEnabled),
-        discordWebhookUrl: settings && settings.discordWebhookUrl,
-        payload: payload
-      });
-    },
-
     clearCache: function () {
-      memoryCache = {};
+      memoryCache = Object.create(null);
+      return new Promise(function (resolve) {
+        if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local) {
+          resolve();
+          return;
+        }
+        chrome.storage.local.remove(["sspro_swr_cache"], function () {
+          resolve();
+        });
+      });
     }
   };
 
