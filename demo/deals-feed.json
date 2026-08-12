@@ -77,7 +77,29 @@
         "tiktokScript": "Hook (0-3s): \"Ho trovato un errore di prezzo su Tech.\"\nReveal: \"Sony WH-1000XM5 (Amazon Warehouse / Nuovo&Usato) a €175,93 contro una media mercato di €300,00.\"\nMath: \"Togliendo il 13% di commissioni e le spedizioni restano circa €80,57 netti — ROI 45.8%.\"\nCTA: \"Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)\"\nOverlay text: ROI NETTO 45.8% · SmartSniper Pro"
       },
       "cta": "Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
-      "disclaimer": "Stime trasparenti basate su snapshot pubblici outlet/warehouse e medie annunci eBay/Vinted. Verificare disponibilità, condizione e prezzo live prima dell’acquisto. Non è consulenza finanziaria."
+      "disclaimer": "Stime trasparenti basate su snapshot pubblici outlet/warehouse e medie annunci eBay/Vinted. Verificare disponibilità, condizione e prezzo live prima dell’acquisto. Non è consulenza finanziaria.",
+      "url": "https://www.amazon.it/dp/B09Y2MYL5C",
+      "inboundShipping": 0,
+      "outboundShipping": 4.5,
+      "sizeClass": "small",
+      "history": [
+        {
+          "t": "T-3",
+          "p": 300.0
+        },
+        {
+          "t": "T-2",
+          "p": 237.97
+        },
+        {
+          "t": "T-1",
+          "p": 190.0
+        },
+        {
+          "t": "T0",
+          "p": 175.93
+        }
+      ]
     },
     {
       "id": "deal-ninja-af180-outlet",
@@ -119,7 +141,29 @@
         "tiktokScript": "Hook (0-3s): \"Ho trovato un errore di prezzo su Piccoli Elettrodomestici.\"\nReveal: \"Ninja Air Fryer MAX PRO AF180EU 6,2L (Outlet / Warehouse) a €95,80 contro una media mercato di €160,00.\"\nMath: \"Togliendo il 13% di commissioni e le spedizioni restano circa €36,90 netti — ROI 38.52%.\"\nCTA: \"Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)\"\nOverlay text: ROI NETTO 38.52% · SmartSniper Pro"
       },
       "cta": "Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
-      "disclaimer": "Stime trasparenti basate su snapshot pubblici outlet/warehouse e medie annunci eBay/Vinted. Verificare disponibilità, condizione e prezzo live prima dell’acquisto. Non è consulenza finanziaria."
+      "disclaimer": "Stime trasparenti basate su snapshot pubblici outlet/warehouse e medie annunci eBay/Vinted. Verificare disponibilità, condizione e prezzo live prima dell’acquisto. Non è consulenza finanziaria.",
+      "url": "https://www.amazon.it/dp/B0CZXXVKS7",
+      "inboundShipping": 0,
+      "outboundShipping": 6.5,
+      "sizeClass": "small",
+      "history": [
+        {
+          "t": "T-3",
+          "p": 160.0
+        },
+        {
+          "t": "T-2",
+          "p": 127.9
+        },
+        {
+          "t": "T-1",
+          "p": 103.46
+        },
+        {
+          "t": "T0",
+          "p": 95.8
+        }
+      ]
     },
     {
       "id": "deal-campus00s-zalando",
@@ -161,7 +205,29 @@
         "tiktokScript": "Hook (0-3s): \"Ho trovato un errore di prezzo su Sneaker.\"\nReveal: \"adidas Originals Campus 00s (Outlet / Promo Zalando) a €65,99 contro una media mercato di €110,00.\"\nMath: \"Togliendo il 13% di commissioni e le spedizioni restano circa €25,21 netti — ROI 38.2%.\"\nCTA: \"Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)\"\nOverlay text: ROI NETTO 38.2% · SmartSniper Pro"
       },
       "cta": "Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
-      "disclaimer": "Stime trasparenti basate su snapshot pubblici outlet/warehouse e medie annunci eBay/Vinted. Verificare disponibilità, condizione e prezzo live prima dell’acquisto. Non è consulenza finanziaria."
+      "disclaimer": "Stime trasparenti basate su snapshot pubblici outlet/warehouse e medie annunci eBay/Vinted. Verificare disponibilità, condizione e prezzo live prima dell’acquisto. Non è consulenza finanziaria.",
+      "url": "https://www.zalando.it/adidas-originals-campus-00s-beta-unisex-sneakers-basse-core-black-ad115o1tr-q11.html",
+      "inboundShipping": 0,
+      "outboundShipping": 4.5,
+      "sizeClass": "small",
+      "history": [
+        {
+          "t": "T-3",
+          "p": 110.0
+        },
+        {
+          "t": "T-2",
+          "p": 88.0
+        },
+        {
+          "t": "T-1",
+          "p": 71.27
+        },
+        {
+          "t": "T0",
+          "p": 65.99
+        }
+      ]
     },
     {
       "id": "deal-lefant-v1-od",
@@ -204,7 +270,29 @@
         "tiktokScript": "Hook (0-3s): \"Ho trovato un errore di prezzo su Piccoli Elettrodomestici.\"\nReveal: \"Lefant V1 Scopa Elettrica Senza Fili (Offerta del Giorno + coupon) a €84,99 contro una media mercato di €140,00.\"\nMath: \"Togliendo il 13% di commissioni e le spedizioni restano circa €30,31 netti — ROI 35.66%.\"\nCTA: \"Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)\"\nOverlay text: ROI NETTO 35.66% · SmartSniper Pro"
       },
       "cta": "Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
-      "disclaimer": "Stime trasparenti basate su snapshot pubblici outlet/warehouse e medie annunci eBay/Vinted. Verificare disponibilità, condizione e prezzo live prima dell’acquisto. Non è consulenza finanziaria."
+      "disclaimer": "Stime trasparenti basate su snapshot pubblici outlet/warehouse e medie annunci eBay/Vinted. Verificare disponibilità, condizione e prezzo live prima dell’acquisto. Non è consulenza finanziaria.",
+      "url": "https://www.amazon.it/dp/B0GLNHM76L",
+      "inboundShipping": 0,
+      "outboundShipping": 6.5,
+      "sizeClass": "small",
+      "history": [
+        {
+          "t": "T-3",
+          "p": 140.0
+        },
+        {
+          "t": "T-2",
+          "p": 112.5
+        },
+        {
+          "t": "T-1",
+          "p": 91.79
+        },
+        {
+          "t": "T0",
+          "p": 84.99
+        }
+      ]
     },
     {
       "id": "deal-airpods4-warehouse",
@@ -246,7 +334,29 @@
         "tiktokScript": "Hook (0-3s): \"Ho trovato un errore di prezzo su Tech.\"\nReveal: \"Apple AirPods 4 (Amazon Seconda Mano / Warehouse) a €89,89 contro una media mercato di €145,00.\"\nMath: \"Togliendo il 13% di commissioni e le spedizioni restano circa €31,76 netti — ROI 35.33%.\"\nCTA: \"Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)\"\nOverlay text: ROI NETTO 35.33% · SmartSniper Pro"
       },
       "cta": "Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
-      "disclaimer": "Stime trasparenti basate su snapshot pubblici outlet/warehouse e medie annunci eBay/Vinted. Verificare disponibilità, condizione e prezzo live prima dell’acquisto. Non è consulenza finanziaria."
+      "disclaimer": "Stime trasparenti basate su snapshot pubblici outlet/warehouse e medie annunci eBay/Vinted. Verificare disponibilità, condizione e prezzo live prima dell’acquisto. Non è consulenza finanziaria.",
+      "url": "https://www.amazon.it/dp/B0DGHWD7CT",
+      "inboundShipping": 0,
+      "outboundShipping": 4.5,
+      "sizeClass": "small",
+      "history": [
+        {
+          "t": "T-3",
+          "p": 145.0
+        },
+        {
+          "t": "T-2",
+          "p": 117.44
+        },
+        {
+          "t": "T-1",
+          "p": 97.08
+        },
+        {
+          "t": "T0",
+          "p": 89.89
+        }
+      ]
     }
   ]
 }

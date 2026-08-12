@@ -11,118 +11,54 @@
     <header class="top">
       <div>
         <p class="eyebrow">SMARTSNIPER PRO</p>
-        <h1>Deal Intelligence</h1>
+        <h1>Deal Desk</h1>
       </div>
       <button id="btn-sync" class="btn primary" type="button">Controlla Ora</button>
     </header>
-
     <p id="sync-meta" class="sync-meta">Sync: —</p>
-
     <nav class="tabs" role="tablist">
-      <button class="tab active" data-tab="deals" type="button" role="tab" aria-selected="true">Hot Deals / Arbitraggio</button>
-      <button class="tab" data-tab="coupons" type="button" role="tab" aria-selected="false">Coupon &amp; Cashback</button>
-      <button class="tab" data-tab="settings" type="button" role="tab" aria-selected="false">Webhook &amp; Settings</button>
+      <button class="tab active" data-tab="deals" type="button">Hot Deals</button>
+      <button class="tab" data-tab="coupons" type="button">Coupon Live</button>
+      <button class="tab" data-tab="settings" type="button">Settings</button>
     </nav>
-
-    <section id="tab-deals" class="panel active" role="tabpanel">
-      <form id="watch-form" class="watch-form">
-        <label>
-          URL prodotto
-          <input id="watch-url" type="url" placeholder="http://127.0.0.1:8765/demo/product-demo.html" required />
-        </label>
-        <label>
-          Titolo (opzionale)
-          <input id="watch-title" type="text" placeholder="Sony WH-1000XM5" />
-        </label>
-        <button class="btn secondary" type="submit">Aggiungi al monitor</button>
-      </form>
+    <section id="tab-deals" class="panel active">
       <div id="deals-list" class="cards"></div>
-      <div id="watched-list" class="cards muted"></div>
     </section>
-
-    <section id="tab-coupons" class="panel" role="tabpanel" hidden>
+    <section id="tab-coupons" class="panel" hidden>
       <div id="coupons-summary" class="summary"></div>
       <div id="coupons-list" class="cards"></div>
     </section>
-
-    <section id="tab-settings" class="panel" role="tabpanel" hidden>
+    <section id="tab-settings" class="panel" hidden>
       <form id="settings-form" class="settings-form">
-        <fieldset>
-          <legend>API Backend</legend>
-          <label>
-            Modalità
-            <select id="apiMode">
-              <option value="mock">Mock locale (SWR)</option>
-              <option value="live">Live api.smartsniper.pro</option>
-            </select>
-          </label>
-          <label>
-            Base URL
-            <input id="apiBaseUrl" type="url" placeholder="https://api.smartsniper.pro" />
-          </label>
-          <label>
-            Polling (minuti)
-            <input id="pollMinutes" type="number" min="1" max="120" step="1" />
-          </label>
-        </fieldset>
-
-        <fieldset>
-          <legend>Affiliate</legend>
-          <label>
-            SubID default
-            <input id="defaultSubId" type="text" maxlength="64" />
-          </label>
-          <label>
-            Amazon tag
-            <input id="amazonTag" type="text" />
-          </label>
-          <label>
-            Awin publisher ID
-            <input id="awinPublisherId" type="text" />
-          </label>
-          <label>
-            eBay campaign ID
-            <input id="ebayCampaignId" type="text" />
-          </label>
-        </fieldset>
-
-        <fieldset>
-          <legend>Telegram</legend>
-          <label class="check">
-            <input id="telegramEnabled" type="checkbox" />
-            Abilita webhook Telegram
-          </label>
-          <label>
-            Bot token
-            <input id="telegramBotToken" type="password" autocomplete="off" />
-          </label>
-          <label>
-            Chat ID
-            <input id="telegramChatId" type="text" />
-          </label>
-        </fieldset>
-
-        <fieldset>
-          <legend>Discord</legend>
-          <label class="check">
-            <input id="discordEnabled" type="checkbox" />
-            Abilita webhook Discord
-          </label>
-          <label>
-            Webhook URL
-            <input id="discordWebhookUrl" type="url" placeholder="https://discord.com/api/webhooks/..." />
-          </label>
-        </fieldset>
-
-        <div class="row">
-          <button class="btn primary" type="submit">Salva settings</button>
-          <button class="btn secondary" id="btn-test-webhook" type="button">Test webhook</button>
-        </div>
+        <label>API mode
+          <select id="apiMode">
+            <option value="mock">Mock / deals-feed.json</option>
+            <option value="live">Live API</option>
+          </select>
+        </label>
+        <label>Poll minuti
+          <input id="pollMinutes" type="number" min="1" max="120" step="1" />
+        </label>
+        <label>SubID default
+          <input id="defaultSubId" type="text" maxlength="64" />
+        </label>
+        <label>Amazon tag
+          <input id="amazonTag" type="text" />
+        </label>
+        <label>Awin publisher
+          <input id="awinPublisherId" type="text" />
+        </label>
+        <label>eBay campaign
+          <input id="ebayCampaignId" type="text" />
+        </label>
+        <label>Min ROI %
+          <input id="minRoiPercent" type="number" min="1" max="100" step="1" />
+        </label>
+        <button class="btn primary" type="submit">Salva</button>
         <p id="settings-msg" class="msg"></p>
       </form>
     </section>
   </div>
-
   <script src="../utils/affiliate.js"></script>
   <script src="../utils/api-client.js"></script>
   <script src="popup.js"></script>

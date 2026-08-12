@@ -1,17 +1,13 @@
-/**
- * SmartSniper Pro — Service Worker (Manifest V3)
- * chrome.alarms polls ONLY our backend for pre-built alerts. No local scraping.
- */
 /* global AffiliateRouter, ApiClient, ArbitrageCalculator */
-
 importScripts(
   chrome.runtime.getURL("utils/affiliate.js"),
   chrome.runtime.getURL("utils/api-client.js")
 );
 
-var ALARM_NAME = "smartsniper-backend-sync";
+var ALARM_NAME = "smartsniper-deals-feed-sync";
 var POLL_MINUTES = 15;
 var NOTIFIED_KEY = "notifiedAlertIds";
+var MIN_ROI = 0.3;
 
 var DEFAULT_SETTINGS = {
   pollMinutes: POLL_MINUTES,
@@ -24,7 +20,7 @@ var DEFAULT_SETTINGS = {
   discordWebhookUrl: "",
   affiliate: {},
   defaultSubId: "organic",
-  minRoiPercent: 25
+  minRoiPercent: 30
 };
 
 async function getStorage(keys) {
@@ -45,20 +41,16 @@ async function ensureDefaults() {
     NOTIFIED_KEY
   ]);
   var patch = {};
-
   if (!Array.isArray(data.watchedItems)) patch.watchedItems = [];
   if (!Array.isArray(data.sessionDeals)) patch.sessionDeals = [];
   if (!Array.isArray(data.hotDeals)) patch.hotDeals = [];
   if (!Array.isArray(data[NOTIFIED_KEY])) patch[NOTIFIED_KEY] = [];
-
   if (!data.settings || typeof data.settings !== "object") {
     patch.settings = Object.assign({}, DEFAULT_SETTINGS);
   } else {
     patch.settings = Object.assign({}, DEFAULT_SETTINGS, data.settings);
   }
-
   if (!data.initialized) patch.initialized = true;
-
   if (Object.keys(patch).length) await setStorage(patch);
   return Object.assign({}, data, patch);
 }
@@ -77,162 +69,91 @@ function affiliateConfigFromSettings(settings) {
 }
 
 function buildAffiliated(url, merchant, settings, subId) {
-  return AffiliateRouter.buildAffiliateUrl(url, merchant, {
+  return AffiliateRouter.buildUrl(url, merchant, {
     config: affiliateConfigFromSettings(settings),
     subId: subId || settings.defaultSubId || "organic"
   });
 }
 
-async function deliverWebhooks(alert, settings) {
-  var payload = {
-    event: "smartsniper.alert",
-    title: alert.title,
-    merchant: alert.merchant,
-    currentPrice: alert.currentPrice,
-    previousPrice: alert.previousPrice,
-    dropPercent: alert.dropPercent,
-    roiNetPercent: alert.arbitrage ? alert.arbitrage.roiNetPercent : null,
-    profit: alert.arbitrage ? alert.arbitrage.profit : null,
-    url: alert.affiliateUrl,
-    createdAt: alert.createdAt
-  };
-
-  var results = { telegram: false, discord: false, mock: null };
-
-  if (settings.telegramEnabled && settings.telegramBotToken && settings.telegramChatId) {
-    try {
-      var text =
-        "*SmartSniper Pro*\n" +
-        alert.title +
-        "\n€" +
-        alert.currentPrice +
-        " (was €" +
-        alert.previousPrice +
-        ")\nROI netto: " +
-        (alert.arbitrage ? alert.arbitrage.roiNetPercent : "?") +
-        "%\n" +
-        alert.affiliateUrl;
-      var tgUrl =
-        "https://api.telegram.org/bot" +
-        settings.telegramBotToken +
-        "/sendMessage";
-      var tgRes = await fetch(tgUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: settings.telegramChatId,
-          text: text,
-          parse_mode: "Markdown",
-          disable_web_page_preview: false
-        })
-      });
-      results.telegram = tgRes.ok;
-    } catch (e) {
-      results.telegram = false;
-    }
-  }
-
-  if (settings.discordEnabled && settings.discordWebhookUrl) {
-    try {
-      var discRes = await fetch(settings.discordWebhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: null,
-          embeds: [
-            {
-              title: "SmartSniper Pro — Deal",
-              description: alert.title,
-              url: alert.affiliateUrl,
-              color: 0x00d4aa,
-              fields: [
-                { name: "Prezzo", value: "€" + alert.currentPrice, inline: true },
-                {
-                  name: "ROI netto",
-                  value: (alert.arbitrage ? alert.arbitrage.roiNetPercent : 0) + "%",
-                  inline: true
-                },
-                {
-                  name: "Profitto stimato",
-                  value: "€" + (alert.arbitrage ? alert.arbitrage.profit : 0),
-                  inline: true
-                }
-              ]
-            }
-          ]
-        })
-      });
-      results.discord = discRes.ok;
-    } catch (e) {
-      results.discord = false;
-    }
-  }
-
-  results.mock = await ApiClient.dispatchWebhook(payload, settings);
-  return results;
+function qualifiesRoi(arb, settings) {
+  if (!arb) return false;
+  var min = Number(settings && settings.minRoiPercent) / 100;
+  if (!Number.isFinite(min) || min <= 0) min = MIN_ROI;
+  return Number(arb.roiNet) > min;
 }
 
-async function showNotification(alert) {
-  var notificationId = "ss_" + String(alert.id || Date.now());
-  var roi = alert.arbitrage ? alert.arbitrage.roiNetPercent : 0;
-  var profit = alert.arbitrage ? alert.arbitrage.profit : 0;
-  await chrome.notifications.create(notificationId, {
-    type: "basic",
-    iconUrl: chrome.runtime.getURL("icons/icon128.png"),
-    title: "SmartSniper Pro — Deal trovato",
-    message:
-      alert.title +
-      " · €" +
-      alert.currentPrice +
-      " · ROI netto " +
-      roi +
-      "% · profitto €" +
-      profit,
-    priority: 2,
-    requireInteraction: true
-  });
-  return notificationId;
+async function fetchDealsFeedRaw() {
+  var url = chrome.runtime.getURL("demo/deals-feed.json");
+  var res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error("deals-feed " + res.status);
+  return res.json();
 }
 
-async function syncAlertsFromBackend(options) {
+async function syncDealsFeed(options) {
   options = options || {};
   var state = await ensureDefaults();
   var settings = state.settings;
-  var response = await ApiClient.getAlerts();
-  var alerts = Array.isArray(response.alerts) ? response.alerts : [];
+  var feed = await fetchDealsFeedRaw();
+  var deals = Array.isArray(feed.deals) ? feed.deals : [];
   var notified = Array.isArray(state[NOTIFIED_KEY]) ? state[NOTIFIED_KEY].slice() : [];
   var hotDeals = [];
   var freshCount = 0;
 
-  for (var i = 0; i < alerts.length; i++) {
-    var alert = alerts[i];
-    if (!alert.arbitrage || !alert.arbitrage.qualifies) {
-      if (alert.arbitrage) {
-        continue;
-      }
-      var recalc = ArbitrageCalculator.calculate({
-        purchasePrice: alert.currentPrice,
-        fairMarketValue: alert.fairMarketValue || (alert.arbitrage && alert.arbitrage.fairMarketValue),
-        merchant: alert.merchant
-      });
-      if (!recalc.qualifies) continue;
-      alert.arbitrage = recalc;
-    }
+  for (var i = 0; i < deals.length; i++) {
+    var deal = deals[i];
+    var arb = ArbitrageCalculator.calculate({
+      purchasePrice: deal.purchasePrice,
+      fairMarketValue: deal.fairMarketValue,
+      merchant: deal.merchant,
+      inboundShipping: deal.inboundShipping,
+      outboundShipping: deal.outboundShipping,
+      sizeClass: deal.sizeClass
+    });
+    if (!qualifiesRoi(arb, settings)) continue;
 
-    alert.affiliateUrl = buildAffiliated(
-      alert.url,
-      alert.merchant,
+    var dealUrl = deal.url || deal.originalUrl || "";
+    var affiliateUrl = buildAffiliated(
+      dealUrl,
+      deal.merchant,
       settings,
-      "notify_" + (alert.productId || i)
+      "notify_" + String(deal.id || i)
     );
-
+    var alert = {
+      id: deal.id || "deal_" + i,
+      productId: deal.id || "deal_" + i,
+      title: deal.name,
+      name: deal.name,
+      category: deal.category || "",
+      merchant: deal.merchant,
+      url: dealUrl,
+      affiliateUrl: affiliateUrl,
+      currentPrice: deal.purchasePrice,
+      purchasePrice: deal.purchasePrice,
+      fairMarketValue: deal.fairMarketValue,
+      history: Array.isArray(deal.history) ? deal.history : [],
+      arbitrage: arb,
+      createdAt: feed.generatedAt || new Date().toISOString()
+    };
     hotDeals.push(alert);
 
-    var dedupeKey = String(alert.productId || alert.id) + "_" + String(alert.currentPrice);
+    var dedupeKey = String(alert.productId) + "_" + String(alert.currentPrice);
     var already = notified.indexOf(dedupeKey) !== -1;
     if (!already || options.forceNotify) {
-      await showNotification(alert);
-      await deliverWebhooks(alert, settings);
+      await chrome.notifications.create("ss_" + String(alert.id), {
+        type: "basic",
+        iconUrl: chrome.runtime.getURL("icons/icon128.png"),
+        title: "SmartSniper Pro — Hot Deal",
+        message:
+          alert.title +
+          " · €" +
+          alert.currentPrice +
+          " · ROI netto " +
+          arb.roiNetPercent +
+          "% · profitto €" +
+          arb.profit,
+        priority: 2,
+        requireInteraction: true
+      });
       if (!already) notified.push(dedupeKey);
       freshCount += 1;
     }
@@ -244,19 +165,15 @@ async function syncAlertsFromBackend(options) {
     hotDeals: hotDeals,
     lastSyncAt: new Date().toISOString(),
     lastSyncMeta: {
-      source: response._cache || response.source || "unknown",
+      source: "demo/deals-feed.json",
       count: hotDeals.length,
-      fresh: freshCount
+      fresh: freshCount,
+      generatedAt: feed.generatedAt || null
     },
     notifiedAlertIds: notified
   });
 
-  return {
-    ok: true,
-    alerts: hotDeals,
-    fresh: freshCount,
-    cache: response._cache || null
-  };
+  return { ok: true, alerts: hotDeals, fresh: freshCount };
 }
 
 chrome.runtime.onInstalled.addListener(function () {
@@ -269,8 +186,8 @@ chrome.runtime.onStartup.addListener(function () {
 
 chrome.alarms.onAlarm.addListener(function (alarm) {
   if (alarm.name === ALARM_NAME) {
-    syncAlertsFromBackend({ forceNotify: false }).catch(function (err) {
-      console.error("[SmartSniper Pro] backend sync failed", err);
+    syncDealsFeed({ forceNotify: false }).catch(function (err) {
+      console.error("[SmartSniper Pro] deals-feed sync failed", err);
     });
   }
 });
@@ -281,14 +198,17 @@ chrome.notifications.onClicked.addListener(async function (notificationId) {
   var settings = Object.assign({}, DEFAULT_SETTINGS, state.settings || {});
   var match = null;
   for (var i = 0; i < deals.length; i++) {
-    if (("ss_" + String(deals[i].id)).indexOf(notificationId) === 0 || notificationId.indexOf(String(deals[i].productId)) !== -1) {
+    var nid = "ss_" + String(deals[i].id);
+    if (notificationId === nid || notificationId.indexOf(String(deals[i].productId)) !== -1) {
       match = deals[i];
       break;
     }
   }
   if (!match && deals.length) match = deals[0];
   if (match) {
-    var url = match.affiliateUrl || buildAffiliated(match.url, match.merchant, settings, "notif_click");
+    var url =
+      match.affiliateUrl ||
+      buildAffiliated(match.url, match.merchant, settings, "notif_click");
     await chrome.tabs.create({ url: url });
   }
 });
@@ -298,28 +218,9 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     await ensureDefaults();
 
     if (message && message.type === "SYNC_NOW") {
-      ApiClient.clearCache();
-      var result = await syncAlertsFromBackend({ forceNotify: !!message.forceNotify });
+      await ApiClient.clearCache();
+      var result = await syncDealsFeed({ forceNotify: !!message.forceNotify });
       sendResponse(result);
-      return;
-    }
-
-    if (message && message.type === "WATCH_URL") {
-      var quoted = await ApiClient.watchProduct(message.url, message.title);
-      var state = await getStorage(["watchedItems", "settings"]);
-      var items = Array.isArray(state.watchedItems) ? state.watchedItems.slice() : [];
-      var watched = quoted.watched;
-      var exists = false;
-      for (var i = 0; i < items.length; i++) {
-        if (items[i].url === watched.url || items[i].id === watched.id) {
-          items[i] = Object.assign({}, items[i], watched);
-          exists = true;
-          break;
-        }
-      }
-      if (!exists) items.push(watched);
-      await setStorage({ watchedItems: items });
-      sendResponse({ ok: true, watched: watched, items: items });
       return;
     }
 
@@ -347,7 +248,9 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 
     if (message && message.type === "RECORD_DEAL") {
       var dealsState = await getStorage(["sessionDeals"]);
-      var sessionDeals = Array.isArray(dealsState.sessionDeals) ? dealsState.sessionDeals.slice() : [];
+      var sessionDeals = Array.isArray(dealsState.sessionDeals)
+        ? dealsState.sessionDeals.slice()
+        : [];
       var deal = Object.assign({}, message.deal || {}, {
         id: "deal_" + Date.now(),
         recordedAt: new Date().toISOString()
@@ -372,35 +275,13 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     if (message && message.type === "BUILD_AFFILIATE_URL") {
       var st2 = await getStorage(["settings"]);
       var settings2 = Object.assign({}, DEFAULT_SETTINGS, st2.settings || {});
-      var affiliated = buildAffiliated(message.url, message.merchant, settings2, message.subId);
+      var affiliated = buildAffiliated(
+        message.url,
+        message.merchant,
+        settings2,
+        message.subId
+      );
       sendResponse({ ok: true, url: affiliated });
-      return;
-    }
-
-    if (message && message.type === "TEST_WEBHOOK") {
-      var st3 = await getStorage(["settings"]);
-      var settings3 = Object.assign({}, DEFAULT_SETTINGS, st3.settings || {});
-      var sample = {
-        id: "test_" + Date.now(),
-        title: "Test webhook SmartSniper Pro",
-        merchant: "demo",
-        url: "http://127.0.0.1:8765/demo/product-demo.html",
-        currentPrice: 278,
-        previousPrice: 379,
-        dropPercent: 26.6,
-        arbitrage: ArbitrageCalculator.calculate({
-          purchasePrice: 278,
-          fairMarketValue: 410,
-          merchant: "demo",
-          inboundShipping: 4.9,
-          outboundShipping: 6.5,
-          sizeClass: "small"
-        }),
-        createdAt: new Date().toISOString()
-      };
-      sample.affiliateUrl = buildAffiliated(sample.url, "demo", settings3, "webhook_test");
-      var delivered = await deliverWebhooks(sample, settings3);
-      sendResponse({ ok: true, delivered: delivered, sample: sample });
       return;
     }
 
@@ -408,6 +289,5 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   })().catch(function (err) {
     sendResponse({ ok: false, error: String(err && err.message ? err.message : err) });
   });
-
   return true;
 });

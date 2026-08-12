@@ -1,7 +1,3 @@
-/**
- * SmartSniper Pro — AffiliateRouter
- * Every outbound commerce URL (CTA, notification, overlay) MUST go through buildAffiliateUrl.
- */
 (function (root) {
   "use strict";
 
@@ -38,7 +34,11 @@
       if (host.indexOf("zalando.") !== -1) return "zalando";
       if (host.indexOf("mediaworld.") !== -1) return "mediaworld";
       if (host.indexOf("unieuro.") !== -1) return "unieuro";
-      if (host.indexOf("127.0.0.1") !== -1 || host === "localhost" || String(url).indexOf("file:") === 0) {
+      if (
+        host.indexOf("127.0.0.1") !== -1 ||
+        host === "localhost" ||
+        String(url).indexOf("file:") === 0
+      ) {
         return "demo";
       }
       return "unknown";
@@ -48,7 +48,7 @@
   }
 
   function networkForMerchant(merchant) {
-    switch (merchant) {
+    switch (String(merchant || "").toLowerCase()) {
       case "amazon":
         return NETWORK.AMAZON;
       case "ebay":
@@ -74,21 +74,21 @@
 
   function injectAmazon(originalUrl, config, subId) {
     var u = new URL(originalUrl);
-    u.searchParams.set("tag", config.amazonTag);
+    u.searchParams.set("tag", config.amazonTag || "smartsniper-21");
     u.searchParams.set("ascsubtag", subId);
     return u.toString();
   }
 
   function injectAwin(originalUrl, merchant, config, subId) {
     var advertiserId =
-      config.awinAdvertisers[merchant] ||
-      config.awinAdvertisers.zalando ||
+      (config.awinAdvertisers && config.awinAdvertisers[merchant]) ||
+      (config.awinAdvertisers && config.awinAdvertisers.zalando) ||
       "11543";
     return (
       "https://www.awin1.com/cread.php?awinmid=" +
       advertiserId +
       "&awinaffid=" +
-      config.awinPublisherId +
+      (config.awinPublisherId || "1234567") +
       "&ued=" +
       encodeURIComponent(originalUrl) +
       "&clickref=" +
@@ -98,13 +98,13 @@
 
   function injectTradeDoubler(originalUrl, merchant, config, subId) {
     var programId =
-      config.tradeDoublerPrograms[merchant] ||
+      (config.tradeDoublerPrograms && config.tradeDoublerPrograms[merchant]) ||
       "285084";
     return (
       "https://clk.tradedoubler.com/click?p=" +
       programId +
       "&a=" +
-      config.tradeDoublerOrgId +
+      (config.tradeDoublerOrgId || "987654") +
       "&url=" +
       encodeURIComponent(originalUrl) +
       "&epi=" +
@@ -116,8 +116,11 @@
     var u = new URL(originalUrl);
     u.searchParams.set("mkcid", "1");
     u.searchParams.set("mkrid", "710-53481-19255-0");
-    u.searchParams.set("campid", config.ebayCampaignId);
-    u.searchParams.set("customid", config.ebayCustomIdPrefix + "_" + subId);
+    u.searchParams.set("campid", config.ebayCampaignId || "5338771234");
+    u.searchParams.set(
+      "customid",
+      (config.ebayCustomIdPrefix || "sspro") + "_" + subId
+    );
     u.searchParams.set("toolid", "10001");
     u.searchParams.set("mkevt", "1");
     return u.toString();
@@ -131,7 +134,39 @@
       return u.toString();
     } catch (e) {
       var join = originalUrl.indexOf("?") >= 0 ? "&" : "?";
-      return originalUrl + join + "ss_aff=1&ss_sub=" + encodeURIComponent(subId);
+      return (
+        originalUrl + join + "ss_aff=1&ss_sub=" + encodeURIComponent(subId)
+      );
+    }
+  }
+
+  function buildUrl(originalUrl, merchant, opts) {
+    opts = opts || {};
+    if (!originalUrl || typeof originalUrl !== "string") {
+      throw new Error("AffiliateRouter.buildUrl: originalUrl is required");
+    }
+    var config = Object.assign({}, DEFAULT_CONFIG, opts.config || {});
+    var subId = sanitizeSubId(opts.subId || config.defaultSubId);
+    var merch = String(merchant || detectMerchant(originalUrl)).toLowerCase();
+    var network = opts.network || networkForMerchant(merch);
+
+    if (merch === "zalando" && opts.preferTradeDoubler) {
+      network = NETWORK.TRADEDOUBLER;
+    }
+
+    switch (network) {
+      case NETWORK.AMAZON:
+        return injectAmazon(originalUrl, config, subId);
+      case NETWORK.AWIN:
+        return injectAwin(originalUrl, merch, config, subId);
+      case NETWORK.TRADEDOUBLER:
+        return injectTradeDoubler(originalUrl, merch, config, subId);
+      case NETWORK.EBAY:
+        return injectEbay(originalUrl, config, subId);
+      case NETWORK.DIRECT:
+      default:
+        if (merch === "demo") return injectDemo(originalUrl, subId);
+        return originalUrl;
     }
   }
 
@@ -140,49 +175,12 @@
     DEFAULT_CONFIG: DEFAULT_CONFIG,
     detectMerchant: detectMerchant,
     networkForMerchant: networkForMerchant,
-
-    /**
-     * Central affiliate gate.
-     * @param {string} originalUrl
-     * @param {string} [merchant]
-     * @param {{config?: object, subId?: string, network?: string}} [opts]
-     * @returns {string}
-     */
+    buildUrl: buildUrl,
     buildAffiliateUrl: function (originalUrl, merchant, opts) {
-      opts = opts || {};
-      if (!originalUrl || typeof originalUrl !== "string") {
-        throw new Error("AffiliateRouter.buildAffiliateUrl: originalUrl is required");
-      }
-      var config = Object.assign({}, DEFAULT_CONFIG, opts.config || {});
-      var subId = sanitizeSubId(opts.subId || config.defaultSubId);
-      var merch = String(merchant || detectMerchant(originalUrl)).toLowerCase();
-      var network = opts.network || networkForMerchant(merch);
-
-      switch (network) {
-        case NETWORK.AMAZON:
-          return injectAmazon(originalUrl, config, subId);
-        case NETWORK.AWIN:
-          return injectAwin(originalUrl, merch, config, subId);
-        case NETWORK.TRADEDOUBLER:
-          return injectTradeDoubler(originalUrl, merch, config, subId);
-        case NETWORK.EBAY:
-          return injectEbay(originalUrl, config, subId);
-        case NETWORK.DIRECT:
-        default:
-          if (merch === "demo") return injectDemo(originalUrl, subId);
-          return originalUrl;
-      }
+      return buildUrl(originalUrl, merchant, opts);
     },
-
     buildBestUrl: function (originalUrl, merchant, opts) {
-      opts = opts || {};
-      var merch = String(merchant || detectMerchant(originalUrl)).toLowerCase();
-      if (merch === "zalando" && opts.preferTradeDoubler) {
-        return AffiliateRouter.buildAffiliateUrl(originalUrl, merch, Object.assign({}, opts, {
-          network: NETWORK.TRADEDOUBLER
-        }));
-      }
-      return AffiliateRouter.buildAffiliateUrl(originalUrl, merch, opts);
+      return buildUrl(originalUrl, merchant, opts);
     }
   };
 
