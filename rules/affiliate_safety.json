@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "X-SmartSniper-Client",
+          "operation": "set",
+          "value": "pro-extension"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.smartsniper.pro/",
+      "resourceTypes": ["xmlhttprequest", "other"]
+    }
+  }
+]

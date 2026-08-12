@@ -1,90 +1,115 @@
-# SmartSniper — Chrome Extension MVP (Manifest V3)
+# SmartSniper Pro — Chrome Extension MVP (Manifest V3)
 
-Estensione Chrome in HTML/CSS/JavaScript puro che:
+Estensione enterprise **affiliate-first** per coupon, cashback e arbitraggio commerciale.
+Vanilla HTML/CSS/JS, nessuna dipendenza npm.
 
-1. **Rileva coupon & cashback** sulle pagine di checkout dei principali e-commerce e mostra un overlay discreto in basso a destra.
-2. **Monitora i prezzi in background** (ogni 15 minuti via `chrome.alarms`) e invia una **notifica desktop** se il prezzo scende oltre la soglia configurata (default −40%), con stima di rivendita.
+## Cosa fa
 
-Nessuna dipendenza npm: carica la cartella così com’è.
+1. **AffiliateRouter** — ogni CTA, notifica e link acquisto passa da `AffiliateRouter.buildAffiliateUrl(originalUrl, merchant)` (Amazon Associates, Awin, TradeDoubler, eBay Partner Network).
+2. **Cloud delegation** — il browser non fa scraping aggressivo: `utils/api-client.js` parla con un backend mock/live (`/v1/alerts`, `/v1/price/quote`, `/v1/coupons`, `/v1/webhooks/dispatch`) con cache **Stale-While-Revalidate**.
+3. **ROI netto reale** — `ArbitrageCalculator` calcola  
+   `(FMV − 13% fee − spedizione venditore − (acquisto + spedizione inbound)) / (acquisto + inbound)`.  
+   Se ROI netto **&lt; 25%** l’alert non viene inviato.
+4. **Checkout Auto-Apply** — content script in Shadow DOM prova i coupon con eventi nativi (`input`/`change`/`click`) su Amazon, eBay, Zalando, MediaWorld, Unieuro e demo locale.
 
 ## Struttura
 
 ```
 .
 ├── manifest.json
-├── background.js          # service worker: alarms, fetch prezzi, notifiche
-├── popup.html / .css / .js
-├── content.js / content.css
+├── background/background.js
+├── content/content.js
+├── content/content.css
+├── popup/popup.html
+├── popup/popup.css
+├── popup/popup.js
+├── utils/affiliate.js
+├── utils/api-client.js
+├── rules/affiliate_safety.json
 ├── icons/
 ├── demo/
-│   ├── product-demo.html  # prodotto con prezzo modificabile
-│   └── checkout-demo.html # checkout finto per i coupon
+│   ├── product-demo.html
+│   └── checkout-demo.html
 └── README.md
 ```
 
-## Installazione (modalità sviluppatore)
+## Installazione (Load unpacked)
 
-1. Apri Chrome e vai a `chrome://extensions/`.
-2. Attiva **Modalità sviluppatore** (Developer mode) in alto a destra.
-3. Clicca **Carica estensione non pacchettizzata** (Load unpacked).
-4. Seleziona la **root** di questo repository (la cartella che contiene `manifest.json`).
-5. Pinna l’icona SmartSniper nella toolbar.
+1. Apri Chrome → `chrome://extensions/`
+2. Attiva **Developer mode**
+3. Clicca **Load unpacked**
+4. Seleziona la **root** di questo repository (cartella che contiene `manifest.json`)
+5. Pinna SmartSniper Pro nella toolbar
+6. Alla prima notifica, consenti le notification di sistema
 
-### Permessi richiesti
+## Test rapido — Auto-Apply coupon
 
-Alla prima notifica Chrome può chiedere l’autorizzazione per le notifiche di sistema: **Consenti**.
+### Opzione A — file locale
 
-Per testare le pagine `file://` della demo, in `chrome://extensions` → SmartSniper → dettagli, verifica che l’accesso ai file sia consentito se richiesto, oppure usa un server locale (vedi sotto).
+1. Apri `demo/checkout-demo.html` (doppio click o trascina in Chrome)
+2. Comparirà l’overlay **SmartSniper Pro** in basso a destra
+3. Premi **Auto-Apply**
+4. Verifica che il totale scenda con il codice migliore (`SNIPER25`)
+5. Apri il popup → tab **Coupon & Cashback**
 
-## Test rapido — Coupon / Cashback
-
-1. Apri il file locale:
-   - percorso tipico:  
-     `file:///…/smartsniper/demo/checkout-demo.html`  
-   - oppure dalla cartella del progetto: doppio click su `demo/checkout-demo.html`.
-2. In basso a destra compare l’overlay **SmartSniper** con codici demo.
-3. Clicca **Applica** su un codice (viene copiato negli appunti).
-4. Apri il popup dell’estensione → tab **Risparmi/Cashback**: il codice compare nel riepilogo sessione.
-
-Funziona anche su URL reali di checkout/cart di Amazon, eBay, Zalando, MediaWorld, Unieuro (catalogo coupon MVP mock).
-
-## Test rapido — Monitor prezzi & notifica
-
-1. Apri `demo/product-demo.html` nel browser e **copia l’URL completo** dalla barra indirizzi  
-   (es. `file:///home/you/.../smartsniper/demo/product-demo.html`).
-2. Apri il popup SmartSniper → tab **Deal Sniper**.
-3. Incolla l’URL, lascia soglia **40%**, imposta stima rivendita es. **85**, clicca **Aggiungi al monitor**.
-4. Nella pagina demo imposta un prezzo basso (es. **50**) e clicca **Aggiorna prezzo sulla pagina**.
-5. Nel popup clicca **Controlla ora**.
-6. Dovresti ricevere una notifica desktop “SmartSniper — Deal trovato!”; il click sulla notifica apre il link prodotto.
-
-Il controllo periodico automatico gira ogni **15 minuti** (`chrome.alarms`). Usa **Controlla ora** per non aspettare.
-
-### Alternativa senza `file://`
+### Opzione B — server locale (consigliata)
 
 ```bash
-cd /path/to/smartsniper   # root del repo (dove c’è manifest.json)
+cd /path/to/smartsniper
 python3 -m http.server 8765
 ```
 
-Poi monitora: `http://127.0.0.1:8765/demo/product-demo.html`  
-e apri il checkout: `http://127.0.0.1:8765/demo/checkout-demo.html`.
+Apri:
 
-## API Chrome usate
+- Checkout: http://127.0.0.1:8765/demo/checkout-demo.html
+- Prodotto: http://127.0.0.1:8765/demo/product-demo.html
 
-| API | Uso |
-|-----|-----|
-| `chrome.storage.local` | Articoli monitorati, settings, deal di sessione |
-| `chrome.alarms` | Poll prezzi ogni 15 minuti |
-| `chrome.notifications` | Alert quando il drop supera la soglia |
-| `chrome.runtime` messaging | Popup ↔ service worker ↔ content script |
+## Test rapido — Hot Deals / Arbitraggio
 
-## Note MVP
+1. Apri `demo/product-demo.html` e copia l’URL
+2. Popup → tab **Hot Deals / Arbitraggio**
+3. Incolla URL → **Aggiungi al monitor**
+4. Premi **Controlla Ora**
+5. Se ROI netto ≥ 25% ricevi notifica desktop + card deal (link già affiliato)
+6. Cliccando la notifica si apre l’URL passato da `AffiliateRouter`
 
-- Il parsing del prezzo usa regex / meta comuni (`data-price`, `itemprop="price"`, `product:price:amount`, pattern `€…`). Funziona bene sulla demo; su siti reali può fallire per HTML dinamico o anti-bot.
-- I coupon sono un **catalogo mock** lato client: non vengono applicati automaticamente al form del merchant.
-- Nessun backend e nessuna dipendenza di build.
+## Webhook Telegram / Discord
+
+1. Popup → tab **Webhook & Settings**
+2. Compila token/chat Telegram e/o webhook Discord
+3. Salva → **Test webhook**
+4. Ad ogni alert qualificato il service worker dispatcha anche i webhook configurati
+
+## Architettura di produzione
+
+| Layer | Ruolo |
+|-------|--------|
+| Extension (MV3) | UI, overlay checkout, alarm leggero, notifiche |
+| `AffiliateRouter` | Monetizzazione centralizzata + SubID |
+| Backend API | Proxy anti-bot, price intelligence, cache SWR, alert pronti |
+| Webhooks | Fan-out Telegram/Discord per ops / community |
+
+Endpoint backend previsti:
+
+- `GET /v1/health`
+- `GET /v1/coupons?merchant=`
+- `POST /v1/price/quote`
+- `GET /v1/alerts`
+- `POST /v1/watch`
+- `POST /v1/webhooks/dispatch`
+
+In MVP la modalità default è **`apiMode=mock`** (risposte strutturate in-extension). Passa a **live** nelle settings quando `https://api.smartsniper.pro` è online.
+
+Il service worker usa `chrome.alarms` **solo** per polling backend ogni 15 minuti: nessun crawl merchant lato client.
+
+## Permessi
+
+- `storage` — settings, watchlist, deal sessione
+- `alarms` — sync periodico backend
+- `notifications` — alert ROI qualificati
+- `declarativeNetRequest` — header client verso API
+- `activeTab` — azioni contestuali
 
 ## Licenza
 
-MVP dimostrativo — uso libero per sperimentazione locale.
+MVP dimostrativo — uso libero per sperimentazione e staging.
