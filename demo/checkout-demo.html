@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Checkout Demo — SmartSniper</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        background: #f8fafc;
+        color: #0f172a;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+      .box {
+        width: min(440px, 100%);
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 28px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 1.4rem;
+      }
+      p {
+        margin: 0;
+        color: #64748b;
+        line-height: 1.5;
+      }
+      .line {
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <h1>Checkout (demo)</h1>
+      <p>
+        Pagina finta di checkout. Con SmartSniper caricata, in basso a destra compare l’overlay con
+        coupon e cashback. Clicca <strong>Applica</strong>, poi apri il popup → tab
+        <em>Risparmi/Cashback</em>.
+      </p>
+      <div class="line">
+        <span>Totale ordine</span>
+        <span>€129.00</span>
+      </div>
+    </div>
+  </body>
+</html>

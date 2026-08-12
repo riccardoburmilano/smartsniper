@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta property="og:title" content="Cuffie Wireless Pro — Demo SmartSniper" />
+    <meta property="product:price:amount" content="99.90" id="meta-price" />
+    <title>Cuffie Wireless Pro — Demo SmartSniper</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --accent: #34d399;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        background: radial-gradient(80% 50% at 50% 0%, #134e4a, transparent), var(--bg);
+        color: var(--text);
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+      .card {
+        width: min(420px, 100%);
+        background: var(--card);
+        border: 1px solid #334155;
+        border-radius: 16px;
+        padding: 24px;
+      }
+      h1 {
+        font-size: 1.35rem;
+        margin: 0 0 8px;
+      }
+      .hint {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin: 0 0 20px;
+        line-height: 1.45;
+      }
+      .price-row {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      #price {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--accent);
+      }
+      label {
+        display: block;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      input[type="number"] {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid #334155;
+        background: #0b1220;
+        color: var(--text);
+        font-size: 1rem;
+      }
+      button {
+        margin-top: 12px;
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(180deg, #34d399, #10b981);
+        color: #052e1b;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .steps {
+        margin-top: 18px;
+        padding-top: 14px;
+        border-top: 1px solid #334155;
+        color: var(--muted);
+        font-size: 0.85rem;
+        line-height: 1.5;
+      }
+      code {
+        color: var(--accent);
+        font-size: 0.8rem;
+      }
+    </style>
+  </head>
+  <body>
+    <article class="card" itemscope itemtype="https://schema.org/Product">
+      <h1 itemprop="name">Cuffie Wireless Pro</h1>
+      <p class="hint">
+        Pagina demo per testare il monitor prezzi. Imposta un prezzo basso (es. 50) e lancia
+        <strong>Controlla ora</strong> dal popup SmartSniper.
+      </p>
+
+      <div class="price-row">
+        <span>Prezzo:</span>
+        <span id="price" data-price="99.90" itemprop="price" content="99.90">€99.90</span>
+      </div>
+
+      <label for="price-input">Simula nuovo prezzo (€)</label>
+      <input id="price-input" type="number" min="1" step="0.01" value="99.90" />
+      <button type="button" id="apply-price">Aggiorna prezzo sulla pagina</button>
+
+      <div class="steps">
+        1. Copia l’URL di questa pagina nel tab <em>Deal Sniper</em> (soglia 40%, rivendita es. 85).<br />
+        2. Imposta qui un prezzo ≤ ~€60 e clicca Aggiorna.<br />
+        3. Nel popup: <em>Controlla ora</em> → notifica desktop.
+      </div>
+    </article>
+
+    <script>
+      const priceEl = document.getElementById("price");
+      const meta = document.getElementById("meta-price");
+      const input = document.getElementById("price-input");
+
+      function setPrice(value) {
+        const n = Number(value);
+        if (!Number.isFinite(n) || n <= 0) return;
+        const fixed = n.toFixed(2);
+        priceEl.textContent = "€" + fixed;
+        priceEl.setAttribute("data-price", fixed);
+        priceEl.setAttribute("content", fixed);
+        if (meta) meta.setAttribute("content", fixed);
+      }
+
+      document.getElementById("apply-price").addEventListener("click", () => {
+        setPrice(input.value);
+      });
+    </script>
+  </body>
+</html>

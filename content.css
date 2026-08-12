@@ -1,0 +1,167 @@
+/* SmartSniper checkout overlay — scoped under #smartsniper-root */
+
+#smartsniper-root {
+  all: initial;
+  position: fixed !important;
+  right: 16px !important;
+  bottom: 16px !important;
+  z-index: 2147483646 !important;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif !important;
+  color: #e2e8f0 !important;
+  width: 300px !important;
+  max-width: calc(100vw - 32px) !important;
+  box-sizing: border-box !important;
+}
+
+#smartsniper-root * {
+  box-sizing: border-box !important;
+  font-family: inherit !important;
+}
+
+#smartsniper-root .ss-panel {
+  background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%) !important;
+  border: 1px solid #334155 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45) !important;
+  overflow: hidden !important;
+  animation: ss-slide-in 0.35s ease-out !important;
+}
+
+@keyframes ss-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#smartsniper-root .ss-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding: 10px 12px !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+#smartsniper-root .ss-brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #34d399 !important;
+}
+
+#smartsniper-root .ss-brand span {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: #34d399 !important;
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2) !important;
+}
+
+#smartsniper-root .ss-close {
+  appearance: none !important;
+  border: none !important;
+  background: transparent !important;
+  color: #94a3b8 !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  padding: 2px 6px !important;
+}
+
+#smartsniper-root .ss-close:hover {
+  color: #e2e8f0 !important;
+}
+
+#smartsniper-root .ss-body {
+  padding: 10px 12px 12px !important;
+}
+
+#smartsniper-root .ss-sub {
+  margin: 0 0 10px !important;
+  font-size: 12px !important;
+  color: #94a3b8 !important;
+  line-height: 1.35 !important;
+}
+
+#smartsniper-root .ss-list {
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+#smartsniper-root .ss-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding: 8px 10px !important;
+  border-radius: 10px !important;
+  background: rgba(15, 23, 42, 0.7) !important;
+  border: 1px solid #334155 !important;
+}
+
+#smartsniper-root .ss-item-info {
+  min-width: 0 !important;
+  flex: 1 !important;
+}
+
+#smartsniper-root .ss-item-title {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #e2e8f0 !important;
+  margin: 0 0 2px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#smartsniper-root .ss-item-meta {
+  font-size: 11px !important;
+  color: #94a3b8 !important;
+  margin: 0 !important;
+}
+
+#smartsniper-root .ss-code {
+  font-family: ui-monospace, Menlo, Consolas, monospace !important;
+  color: #34d399 !important;
+  font-weight: 700 !important;
+}
+
+#smartsniper-root .ss-apply {
+  appearance: none !important;
+  border: none !important;
+  border-radius: 8px !important;
+  background: linear-gradient(180deg, #34d399, #10b981) !important;
+  color: #052e1b !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 7px 10px !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+}
+
+#smartsniper-root .ss-apply:hover {
+  filter: brightness(1.05) !important;
+}
+
+#smartsniper-root .ss-apply.is-done {
+  background: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+#smartsniper-root .ss-toast {
+  margin-top: 8px !important;
+  font-size: 11px !important;
+  color: #34d399 !important;
+  min-height: 1em !important;
+}
