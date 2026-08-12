@@ -1,0 +1,252 @@
+{
+  "generatedAt": "2026-08-12T00:31:13.195Z",
+  "automation": {
+    "name": "SmartSniper Pro — Daily Arbitrage Content Bot",
+    "schedule": "0 9 * * *",
+    "timezone": "Europe/Rome",
+    "minNetRoiPercent": 35,
+    "feeRatePercent": 13,
+    "formula": "(FMV - 13% fees - outbound shipping - (purchase + inbound)) / (purchase + inbound)",
+    "researchNote": "Firecrawl MCP non disponibile in questo environment: scan eseguito via web research + fetch diretti su Amazon Warehouse/Seconda Mano, MediaWorld/Unieuro outlet, Zalando outlet e aggregatori offerte; FMV da medie eBay/Vinted/Subito."
+  },
+  "summary": {
+    "candidatesScanned": 7,
+    "dealsQualified": 5,
+    "dealsRejected": 2,
+    "categories": [
+      "Tech",
+      "Piccoli Elettrodomestici",
+      "Sneaker"
+    ],
+    "bestRoiPercent": 45.8,
+    "totalEstimatedNetProfitEur": 204.75
+  },
+  "rejected": [
+    {
+      "id": "reject-beats-retail",
+      "name": "Beats Studio Buds new retail",
+      "roiNetPercent": -12.19,
+      "reason": "ROI netto ≤ 35%"
+    },
+    {
+      "id": "reject-rowenta-scopa",
+      "name": "Rowenta RH8155WA MediaWorld",
+      "roiNetPercent": 8.79,
+      "reason": "ROI netto ≤ 35%"
+    }
+  ],
+  "deals": [
+    {
+      "id": "deal-sony-wh1000xm5-warehouse",
+      "scrapedAt": "2026-08-12T00:31:13.195Z",
+      "category": "Tech",
+      "name": "Sony WH-1000XM5 (Amazon Warehouse / Nuovo&Usato)",
+      "merchant": "amazon",
+      "sourceSection": "Warehouse",
+      "currency": "EUR",
+      "purchasePrice": 175.93,
+      "fairMarketValue": 300,
+      "marketNotes": "Buy: listing Nuovo&Usato Amazon da ~€175.93 (nuove spesso ~€229–€249). FMV: media eBay annunci nuovi/come nuovi + Subito warranty-ready ~€280–€320; Vinted NS/NC tipicamente più basso (€150–€180) quindi target canale eBay/Subito.",
+      "comps": {
+        "ebay": "280-320",
+        "vinted": "150-180",
+        "subitoLikeNew": "250-280",
+        "retailNew": 249
+      },
+      "coupon": null,
+      "originalUrl": "https://www.amazon.it/dp/B09Y2MYL5C",
+      "affiliateUrl": "https://www.amazon.it/dp/B09Y2MYL5C?tag=smartsniper-21&ascsubtag=feed_tech_20260812",
+      "affiliateSubId": "feed_tech_20260812",
+      "arbitrage": {
+        "purchasePrice": 175.93,
+        "inboundShipping": 0,
+        "buyCost": 175.93,
+        "fairMarketValue": 300,
+        "platformFees": 39,
+        "outboundShipping": 4.5,
+        "sellNet": 256.5,
+        "profit": 80.57,
+        "roiNet": 0.45796623657136354,
+        "roiNetPercent": 45.8,
+        "qualifies": true
+      },
+      "posts": {
+        "telegram": "Sony WH-1000XM5 (Amazon Warehouse / Nuovo&Usato)\n\nPrezzo scontato: €175,93  →  Valore di mercato (eBay/Vinted): €300,00\nMargine netto stimato: €80,57 (45.8%)\ndopo 13% fee + spedizioni\n\nLink diretto: https://www.amazon.it/dp/B09Y2MYL5C?tag=smartsniper-21&ascsubtag=feed_tech_20260812\n\nTrova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+        "discord": "Sony WH-1000XM5 (Amazon Warehouse / Nuovo&Usato)\n\nPrezzo scontato: €175,93  →  Valore di mercato (eBay/Vinted): €300,00\nMargine netto stimato: €80,57 (45.8%)\ndopo 13% fee + spedizioni\n\nLink diretto: https://www.amazon.it/dp/B09Y2MYL5C?tag=smartsniper-21&ascsubtag=feed_tech_20260812\n\nTrova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+        "twitter": "Sony WH-1000XM5 (Amazon Warehouse / Nuovo&Usato)\n€175,93 vs FMV €300,00\nProfitto netto ~€80,57 (45.8%)\nhttps://www.amazon.it/dp/B09Y2MYL5C?tag=smartsniper-21&ascsubtag=feed_tech_20260812\n\nTrova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+        "tiktokScript": "Hook (0-3s): \"Ho trovato un errore di prezzo su Tech.\"\nReveal: \"Sony WH-1000XM5 (Amazon Warehouse / Nuovo&Usato) a €175,93 contro una media mercato di €300,00.\"\nMath: \"Togliendo il 13% di commissioni e le spedizioni restano circa €80,57 netti — ROI 45.8%.\"\nCTA: \"Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)\"\nOverlay text: ROI NETTO 45.8% · SmartSniper Pro"
+      },
+      "cta": "Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+      "disclaimer": "Stime trasparenti basate su snapshot pubblici outlet/warehouse e medie annunci eBay/Vinted. Verificare disponibilità, condizione e prezzo live prima dell’acquisto. Non è consulenza finanziaria."
+    },
+    {
+      "id": "deal-ninja-af180-outlet",
+      "scrapedAt": "2026-08-12T00:31:13.195Z",
+      "category": "Piccoli Elettrodomestici",
+      "name": "Ninja Air Fryer MAX PRO AF180EU 6,2L (Outlet / Warehouse)",
+      "merchant": "amazon",
+      "sourceSection": "Outlets / Warehouse",
+      "currency": "EUR",
+      "purchasePrice": 95.8,
+      "fairMarketValue": 160,
+      "marketNotes": "Buy: Amazon Nuovo&Usato/Warehouse da ~€95.80; MediaWorld promo osservata ~€100.99. FMV: media vendita usato/nuovo aperto eBay ~€150–€165 (non listino consigliato €149–€230).",
+      "comps": {
+        "ebay": "150-165",
+        "vinted": "140-160",
+        "retailPromo": 100.99
+      },
+      "coupon": null,
+      "originalUrl": "https://www.amazon.it/dp/B0CZXXVKS7",
+      "affiliateUrl": "https://www.amazon.it/dp/B0CZXXVKS7?tag=smartsniper-21&ascsubtag=feed_piccolielettrodomestici_20260812",
+      "affiliateSubId": "feed_piccolielettrodomestici_20260812",
+      "arbitrage": {
+        "purchasePrice": 95.8,
+        "inboundShipping": 0,
+        "buyCost": 95.8,
+        "fairMarketValue": 160,
+        "platformFees": 20.8,
+        "outboundShipping": 6.5,
+        "sellNet": 132.7,
+        "profit": 36.9,
+        "roiNet": 0.3851774530271398,
+        "roiNetPercent": 38.52,
+        "qualifies": true
+      },
+      "posts": {
+        "telegram": "Ninja Air Fryer MAX PRO AF180EU 6,2L (Outlet / Warehouse)\n\nPrezzo scontato: €95,80  →  Valore di mercato (eBay/Vinted): €160,00\nMargine netto stimato: €36,90 (38.52%)\ndopo 13% fee + spedizioni\n\nLink diretto: https://www.amazon.it/dp/B0CZXXVKS7?tag=smartsniper-21&ascsubtag=feed_piccolielettrodomestici_20260812\n\nTrova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+        "discord": "Ninja Air Fryer MAX PRO AF180EU 6,2L (Outlet / Warehouse)\n\nPrezzo scontato: €95,80  →  Valore di mercato (eBay/Vinted): €160,00\nMargine netto stimato: €36,90 (38.52%)\ndopo 13% fee + spedizioni\n\nLink diretto: https://www.amazon.it/dp/B0CZXXVKS7?tag=smartsniper-21&ascsubtag=feed_piccolielettrodomestici_20260812\n\nTrova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+        "twitter": "Ninja Air Fryer MAX PRO AF180EU 6,2L (Outlet / Warehouse)\n€95,80 vs FMV €160,00\nProfitto netto ~€36,90 (38.52%)\nhttps://www.amazon.it/dp/B0CZXXVKS7?tag=smartsniper-21&ascsubtag=feed_piccolielettrodomestici_20260812\n\nTrova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+        "tiktokScript": "Hook (0-3s): \"Ho trovato un errore di prezzo su Piccoli Elettrodomestici.\"\nReveal: \"Ninja Air Fryer MAX PRO AF180EU 6,2L (Outlet / Warehouse) a €95,80 contro una media mercato di €160,00.\"\nMath: \"Togliendo il 13% di commissioni e le spedizioni restano circa €36,90 netti — ROI 38.52%.\"\nCTA: \"Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)\"\nOverlay text: ROI NETTO 38.52% · SmartSniper Pro"
+      },
+      "cta": "Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+      "disclaimer": "Stime trasparenti basate su snapshot pubblici outlet/warehouse e medie annunci eBay/Vinted. Verificare disponibilità, condizione e prezzo live prima dell’acquisto. Non è consulenza finanziaria."
+    },
+    {
+      "id": "deal-campus00s-zalando",
+      "scrapedAt": "2026-08-12T00:31:13.195Z",
+      "category": "Sneaker",
+      "name": "adidas Originals Campus 00s (Outlet / Promo Zalando)",
+      "merchant": "zalando",
+      "sourceSection": "Outlets",
+      "currency": "EUR",
+      "purchasePrice": 65.99,
+      "fairMarketValue": 110,
+      "marketNotes": "Buy: Zalando promo/outlet €65.99 (listino mediano ~€120). FMV: media rivendita nuovo/DS eBay+Vinted colorway popolari ~€105–€115.",
+      "comps": {
+        "ebay": "100-120",
+        "vinted": "95-115",
+        "retailList": 119.99
+      },
+      "coupon": null,
+      "originalUrl": "https://www.zalando.it/adidas-originals-campus-00s-beta-unisex-sneakers-basse-core-black-ad115o1tr-q11.html",
+      "affiliateUrl": "https://www.awin1.com/cread.php?awinmid=11543&awinaffid=1234567&ued=https%3A%2F%2Fwww.zalando.it%2Fadidas-originals-campus-00s-beta-unisex-sneakers-basse-core-black-ad115o1tr-q11.html&clickref=feed_sneaker_20260812",
+      "affiliateSubId": "feed_sneaker_20260812",
+      "arbitrage": {
+        "purchasePrice": 65.99,
+        "inboundShipping": 0,
+        "buyCost": 65.99,
+        "fairMarketValue": 110,
+        "platformFees": 14.3,
+        "outboundShipping": 4.5,
+        "sellNet": 91.2,
+        "profit": 25.21,
+        "roiNet": 0.38202757993635417,
+        "roiNetPercent": 38.2,
+        "qualifies": true
+      },
+      "posts": {
+        "telegram": "adidas Originals Campus 00s (Outlet / Promo Zalando)\n\nPrezzo scontato: €65,99  →  Valore di mercato (eBay/Vinted): €110,00\nMargine netto stimato: €25,21 (38.2%)\ndopo 13% fee + spedizioni\n\nLink diretto: https://www.awin1.com/cread.php?awinmid=11543&awinaffid=1234567&ued=https%3A%2F%2Fwww.zalando.it%2Fadidas-originals-campus-00s-beta-unisex-sneakers-basse-core-black-ad115o1tr-q11.html&clickref=feed_sneaker_20260812\n\nTrova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+        "discord": "adidas Originals Campus 00s (Outlet / Promo Zalando)\n\nPrezzo scontato: €65,99  →  Valore di mercato (eBay/Vinted): €110,00\nMargine netto stimato: €25,21 (38.2%)\ndopo 13% fee + spedizioni\n\nLink diretto: https://www.awin1.com/cread.php?awinmid=11543&awinaffid=1234567&ued=https%3A%2F%2Fwww.zalando.it%2Fadidas-originals-campus-00s-beta-unisex-sneakers-basse-core-black-ad115o1tr-q11.html&clickref=feed_sneaker_20260812\n\nTrova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+        "twitter": "adidas Originals Campus 00s (Outlet / Promo Zalando)\n€65,99 vs FMV €110,00\nProfitto netto ~€25,21 (38.2%)\nhttps://www.awin1.com/cread.php?awinmid=11543&awinaffid=1234567&ued=https%3A%2F%2Fwww.zalando.it%2Fadidas-originals-campus-00s-beta-unisex-sneakers-basse-core-black-ad115o1tr-q11.html&clickref=feed_sneaker_20260812\n\nTrova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+        "tiktokScript": "Hook (0-3s): \"Ho trovato un errore di prezzo su Sneaker.\"\nReveal: \"adidas Originals Campus 00s (Outlet / Promo Zalando) a €65,99 contro una media mercato di €110,00.\"\nMath: \"Togliendo il 13% di commissioni e le spedizioni restano circa €25,21 netti — ROI 38.2%.\"\nCTA: \"Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)\"\nOverlay text: ROI NETTO 38.2% · SmartSniper Pro"
+      },
+      "cta": "Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+      "disclaimer": "Stime trasparenti basate su snapshot pubblici outlet/warehouse e medie annunci eBay/Vinted. Verificare disponibilità, condizione e prezzo live prima dell’acquisto. Non è consulenza finanziaria."
+    },
+    {
+      "id": "deal-lefant-v1-od",
+      "scrapedAt": "2026-08-12T00:31:13.195Z",
+      "category": "Piccoli Elettrodomestici",
+      "name": "Lefant V1 Scopa Elettrica Senza Fili (Offerta del Giorno + coupon)",
+      "merchant": "amazon",
+      "sourceSection": "Offerte del Giorno",
+      "currency": "EUR",
+      "purchasePrice": 84.99,
+      "fairMarketValue": 140,
+      "marketNotes": "Buy: promo Amazon €99.99 − coupon CEIMP6ZK → €84.99 (verificare scadenza/live). FMV realistica post-promo / annunci eBay-Vinted ~€130–€150. Trasparenza: MSRP €339 non usato come FMV (prezzo gonfiato).",
+      "comps": {
+        "ebay": "130-150",
+        "vinted": "120-145",
+        "promoPrice": 99.99,
+        "couponNet": 84.99
+      },
+      "coupon": "CEIMP6ZK",
+      "originalUrl": "https://www.amazon.it/dp/B0GLNHM76L",
+      "affiliateUrl": "https://www.amazon.it/dp/B0GLNHM76L?tag=smartsniper-21&ascsubtag=feed_piccolielettrodomestici_20260812",
+      "affiliateSubId": "feed_piccolielettrodomestici_20260812",
+      "arbitrage": {
+        "purchasePrice": 84.99,
+        "inboundShipping": 0,
+        "buyCost": 84.99,
+        "fairMarketValue": 140,
+        "platformFees": 18.2,
+        "outboundShipping": 6.5,
+        "sellNet": 115.3,
+        "profit": 30.31,
+        "roiNet": 0.3566301917872691,
+        "roiNetPercent": 35.66,
+        "qualifies": true
+      },
+      "posts": {
+        "telegram": "Lefant V1 Scopa Elettrica Senza Fili (Offerta del Giorno + coupon)\n\nPrezzo scontato: €84,99  →  Valore di mercato (eBay/Vinted): €140,00\nMargine netto stimato: €30,31 (35.66%)\ndopo 13% fee + spedizioni\n\nLink diretto: https://www.amazon.it/dp/B0GLNHM76L?tag=smartsniper-21&ascsubtag=feed_piccolielettrodomestici_20260812\n\nTrova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+        "discord": "Lefant V1 Scopa Elettrica Senza Fili (Offerta del Giorno + coupon)\n\nPrezzo scontato: €84,99  →  Valore di mercato (eBay/Vinted): €140,00\nMargine netto stimato: €30,31 (35.66%)\ndopo 13% fee + spedizioni\n\nLink diretto: https://www.amazon.it/dp/B0GLNHM76L?tag=smartsniper-21&ascsubtag=feed_piccolielettrodomestici_20260812\n\nTrova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+        "twitter": "Lefant V1 Scopa Elettrica Senza Fili (Offerta del Giorno + coupon)\n€84,99 vs FMV €140,00\nProfitto netto ~€30,31 (35.66%)\nhttps://www.amazon.it/dp/B0GLNHM76L?tag=smartsniper-21&ascsubtag=feed_piccolielettrodomestici_20260812\n\nTrova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+        "tiktokScript": "Hook (0-3s): \"Ho trovato un errore di prezzo su Piccoli Elettrodomestici.\"\nReveal: \"Lefant V1 Scopa Elettrica Senza Fili (Offerta del Giorno + coupon) a €84,99 contro una media mercato di €140,00.\"\nMath: \"Togliendo il 13% di commissioni e le spedizioni restano circa €30,31 netti — ROI 35.66%.\"\nCTA: \"Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)\"\nOverlay text: ROI NETTO 35.66% · SmartSniper Pro"
+      },
+      "cta": "Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+      "disclaimer": "Stime trasparenti basate su snapshot pubblici outlet/warehouse e medie annunci eBay/Vinted. Verificare disponibilità, condizione e prezzo live prima dell’acquisto. Non è consulenza finanziaria."
+    },
+    {
+      "id": "deal-airpods4-warehouse",
+      "scrapedAt": "2026-08-12T00:31:13.195Z",
+      "category": "Tech",
+      "name": "Apple AirPods 4 (Amazon Seconda Mano / Warehouse)",
+      "merchant": "amazon",
+      "sourceSection": "Warehouse / Seconda Mano",
+      "currency": "EUR",
+      "purchasePrice": 89.89,
+      "fairMarketValue": 145,
+      "marketNotes": "Buy: Amazon Seconda Mano ~€89.89–€95. Buy new retail ~€119. FMV: media annunci eBay/Vinted come nuove / sigillate ~€140–€155 (esclusi lot outlier).",
+      "comps": {
+        "ebay": "140-155",
+        "vinted": "130-150",
+        "retailNew": 119
+      },
+      "coupon": null,
+      "originalUrl": "https://www.amazon.it/dp/B0DGHWD7CT",
+      "affiliateUrl": "https://www.amazon.it/dp/B0DGHWD7CT?tag=smartsniper-21&ascsubtag=feed_tech_20260812",
+      "affiliateSubId": "feed_tech_20260812",
+      "arbitrage": {
+        "purchasePrice": 89.89,
+        "inboundShipping": 0,
+        "buyCost": 89.89,
+        "fairMarketValue": 145,
+        "platformFees": 18.85,
+        "outboundShipping": 4.5,
+        "sellNet": 121.65,
+        "profit": 31.76,
+        "roiNet": 0.3533207253309601,
+        "roiNetPercent": 35.33,
+        "qualifies": true
+      },
+      "posts": {
+        "telegram": "Apple AirPods 4 (Amazon Seconda Mano / Warehouse)\n\nPrezzo scontato: €89,89  →  Valore di mercato (eBay/Vinted): €145,00\nMargine netto stimato: €31,76 (35.33%)\ndopo 13% fee + spedizioni\n\nLink diretto: https://www.amazon.it/dp/B0DGHWD7CT?tag=smartsniper-21&ascsubtag=feed_tech_20260812\n\nTrova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+        "discord": "Apple AirPods 4 (Amazon Seconda Mano / Warehouse)\n\nPrezzo scontato: €89,89  →  Valore di mercato (eBay/Vinted): €145,00\nMargine netto stimato: €31,76 (35.33%)\ndopo 13% fee + spedizioni\n\nLink diretto: https://www.amazon.it/dp/B0DGHWD7CT?tag=smartsniper-21&ascsubtag=feed_tech_20260812\n\nTrova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+        "twitter": "Apple AirPods 4 (Amazon Seconda Mano / Warehouse)\n€89,89 vs FMV €145,00\nProfitto netto ~€31,76 (35.33%)\nhttps://www.amazon.it/dp/B0DGHWD7CT?tag=smartsniper-21&ascsubtag=feed_tech_20260812\n\nTrova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+        "tiktokScript": "Hook (0-3s): \"Ho trovato un errore di prezzo su Tech.\"\nReveal: \"Apple AirPods 4 (Amazon Seconda Mano / Warehouse) a €89,89 contro una media mercato di €145,00.\"\nMath: \"Togliendo il 13% di commissioni e le spedizioni restano circa €31,76 netti — ROI 35.33%.\"\nCTA: \"Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)\"\nOverlay text: ROI NETTO 35.33% · SmartSniper Pro"
+      },
+      "cta": "Trova questi errori di prezzo in automatico ogni giorno installando SmartSniper Pro (Link in Bio)",
+      "disclaimer": "Stime trasparenti basate su snapshot pubblici outlet/warehouse e medie annunci eBay/Vinted. Verificare disponibilità, condizione e prezzo live prima dell’acquisto. Non è consulenza finanziaria."
+    }
+  ]
+}
