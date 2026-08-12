@@ -8,18 +8,17 @@
     :root {
       --bg: #0e131a;
       --card: #171e28;
-      --line: rgba(255,255,255,0.08);
+      --line: rgba(255, 255, 255, 0.08);
       --text: #e8eef7;
       --muted: #93a1b2;
       --accent: #00d4aa;
-      --danger: #ff6b6b;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: "Segoe UI", Helvetica, Arial, sans-serif;
       background:
-        radial-gradient(800px 360px at 100% 0%, rgba(64,120,255,0.16), transparent 50%),
+        radial-gradient(800px 360px at 100% 0%, rgba(0, 212, 170, 0.12), transparent 50%),
         var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -34,18 +33,15 @@
       border: 1px solid var(--line);
       border-radius: 18px;
       padding: 18px;
-      margin-bottom: 14px;
     }
     .line {
       display: flex;
       justify-content: space-between;
-      gap: 12px;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--line);
+      margin: 8px 0;
       font-size: 14px;
     }
-    .line:last-child { border-bottom: 0; font-weight: 700; }
-    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .total { font-size: 22px; font-weight: 800; color: var(--accent); }
+    label { display: block; font-size: 12px; color: var(--muted); margin: 14px 0 6px; }
     input {
       width: 100%;
       border-radius: 10px;
@@ -53,9 +49,8 @@
       background: #0c1118;
       color: var(--text);
       padding: 10px 12px;
-      margin-bottom: 10px;
     }
-    button.apply-promo, #apply-promo {
+    button {
       appearance: none;
       border: 0;
       border-radius: 10px;
@@ -64,120 +59,81 @@
       cursor: pointer;
       background: linear-gradient(180deg, #1dffc2, #00d4aa);
       color: #04110d;
+      margin-top: 10px;
     }
-    #promo-feedback { min-height: 18px; font-size: 13px; color: var(--muted); margin-top: 8px; }
-    #promo-feedback.ok { color: var(--accent); }
-    #promo-feedback.err { color: var(--danger); }
-    .hint { color: var(--muted); font-size: 13px; line-height: 1.45; }
+    #coupon-status { margin-top: 10px; font-size: 13px; color: var(--muted); min-height: 18px; }
+    #coupon-status.ok { color: var(--accent); }
   </style>
 </head>
-<body data-ss-checkout-demo="1">
+<body>
   <div class="wrap">
-    <p class="eyebrow">CHECKOUT DEMO · AUTO-APPLY</p>
-    <h1>Carrello SmartSniper</h1>
-    <p class="sub">Form promo reale per testare input/change/click nativi del content script.</p>
+    <p class="eyebrow">CHECKOUT DEMO · SMARTSNIPER PRO</p>
+    <h1>Carrello demo</h1>
+    <p class="sub">Apri questa pagina con l’estensione attiva: compare l’overlay Shadow DOM e puoi Auto-Apply.</p>
 
     <section class="card">
-      <div class="line"><span>Sony WH-1000XM5</span><span>€278.00</span></div>
-      <div class="line"><span>Spedizione</span><span id="ship-amount">€4.90</span></div>
-      <div class="line"><span>Sconto promo</span><span id="discount-amount">€0.00</span></div>
-      <div class="line"><span>Totale ordine</span><span id="order-total" class="order-total" data-ss-order-total>€282.90</span></div>
-    </section>
+      <div class="line"><span>Sony WH-1000XM5</span><span id="subtotal">€278.00</span></div>
+      <div class="line"><span>Spedizione</span><span id="shipping">€4.90</span></div>
+      <div class="line"><span>Sconto coupon</span><span id="discount">€0.00</span></div>
+      <hr style="border:0;border-top:1px solid var(--line);margin:14px 0;" />
+      <div class="line total"><span>Totale</span><span id="total">€282.90</span></div>
 
-    <section class="card">
-      <form id="promo-form" action="#" method="post">
-        <label for="promo-code">Codice promozionale</label>
-        <input
-          id="promo-code"
-          name="promoCode"
-          data-ss-coupon-input
-          type="text"
-          placeholder="es. SNIPER25"
-          autocomplete="off"
-        />
-        <button id="apply-promo" class="apply-promo" data-ss-coupon-apply type="submit">Applica codice</button>
-        <div id="promo-feedback">Codici validi: SNIPER25, SNIPER10, FLAT15. DEADCODE non sconta.</div>
+      <form id="coupon-form" action="#" method="get">
+        <label for="coupon-code">Codice coupon</label>
+        <input id="coupon-code" name="coupon" data-ss-coupon type="text" placeholder="Inserisci codice" autocomplete="off" />
+        <button id="apply-coupon" data-ss-apply-coupon type="submit">Applica coupon</button>
       </form>
+      <p id="coupon-status"></p>
     </section>
-
-    <p class="hint">
-      Con l’estensione caricata, in basso a destra compare l’overlay Shadow DOM.
-      Premi <strong>Auto-Apply</strong>: il content script prova ogni codice con eventi nativi e tiene il massimo sconto.
-    </p>
   </div>
 
   <script>
     (function () {
-      var BASE_SUBTOTAL = 278;
-      var BASE_SHIP = 4.9;
-      var activeCode = "";
-      var discountEl = document.getElementById("discount-amount");
-      var totalEl = document.getElementById("order-total");
-      var feedback = document.getElementById("promo-feedback");
-      var input = document.getElementById("promo-code");
+      var SUBTOTAL = 278;
+      var SHIPPING = 4.9;
+      var applied = null;
 
-      var RULES = {
+      var COUPONS = {
         SNIPER25: { type: "percent", value: 25 },
         SNIPER10: { type: "percent", value: 10 },
-        FLAT15: { type: "fixed", value: 15 },
-        DEADCODE: { type: "percent", value: 0 }
+        SHIPFREE: { type: "shipping", value: 0 }
       };
 
-      function round2(n) {
-        return Math.round(n * 100) / 100;
+      function money(n) {
+        return "€" + Number(n).toFixed(2);
       }
 
-      function compute(code) {
-        var rule = RULES[String(code || "").trim().toUpperCase()];
+      function render() {
         var discount = 0;
-        if (rule) {
-          if (rule.type === "percent") discount = BASE_SUBTOTAL * (rule.value / 100);
-          if (rule.type === "fixed") discount = rule.value;
+        var shipping = SHIPPING;
+        if (applied) {
+          if (applied.type === "percent") discount = SUBTOTAL * (applied.value / 100);
+          if (applied.type === "shipping") shipping = 0;
         }
-        discount = round2(Math.min(discount, BASE_SUBTOTAL));
-        var total = round2(BASE_SUBTOTAL + BASE_SHIP - discount);
-        return {
-          code: String(code || "").trim().toUpperCase(),
-          valid: !!rule && discount > 0,
-          discount: discount,
-          total: total,
-          baseline: round2(BASE_SUBTOTAL + BASE_SHIP)
-        };
+        var total = SUBTOTAL - discount + shipping;
+        document.getElementById("discount").textContent = money(discount);
+        document.getElementById("shipping").textContent = money(shipping);
+        document.getElementById("total").textContent = money(total);
       }
 
-      function paint(result) {
-        discountEl.textContent = "€" + result.discount.toFixed(2);
-        totalEl.textContent = "€" + result.total.toFixed(2);
-        if (!result.code) {
-          feedback.textContent = "Inserisci un codice promo.";
-          feedback.className = "";
+      document.getElementById("coupon-form").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var code = String(document.getElementById("coupon-code").value || "").trim().toUpperCase();
+        var status = document.getElementById("coupon-status");
+        if (!COUPONS[code]) {
+          applied = null;
+          status.textContent = "Coupon non valido";
+          status.className = "";
+          render();
           return;
         }
-        if (result.valid) {
-          feedback.textContent = "Codice " + result.code + " applicato (−€" + result.discount.toFixed(2) + ")";
-          feedback.className = "ok";
-        } else {
-          feedback.textContent = "Codice non valido o senza sconto.";
-          feedback.className = "err";
-        }
-      }
-
-      window.__SS_DEMO_EVAL__ = function (code) {
-        var result = compute(code);
-        activeCode = result.code;
-        input.value = result.code;
-        paint(result);
-        return result;
-      };
-
-      document.getElementById("promo-form").addEventListener("submit", function (ev) {
-        ev.preventDefault();
-        var result = compute(input.value);
-        activeCode = result.code;
-        paint(result);
+        applied = COUPONS[code];
+        status.textContent = "Coupon " + code + " applicato";
+        status.className = "ok";
+        render();
       });
 
-      paint(compute(""));
+      render();
     })();
   </script>
 </body>

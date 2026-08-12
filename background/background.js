@@ -1,413 +1,220 @@
-/**
- * SmartSniper Pro — Service Worker (Manifest V3)
- * chrome.alarms polls ONLY our backend for pre-built alerts. No local scraping.
- */
 /* global AffiliateRouter, ApiClient, ArbitrageCalculator */
+"use strict";
 
-importScripts(
-  chrome.runtime.getURL("utils/affiliate.js"),
-  chrome.runtime.getURL("utils/api-client.js")
-);
+importScripts("../utils/affiliate.js", "../utils/api-client.js");
 
-var ALARM_NAME = "smartsniper-backend-sync";
+var ALARM_NAME = "sspro-poll";
 var POLL_MINUTES = 15;
-var NOTIFIED_KEY = "notifiedAlertIds";
+var NOTIFIED_KEY = "sspro_notified_ids";
 
-var DEFAULT_SETTINGS = {
-  pollMinutes: POLL_MINUTES,
-  apiMode: "mock",
-  apiBaseUrl: "https://api.smartsniper.pro",
-  telegramEnabled: false,
-  telegramBotToken: "",
-  telegramChatId: "",
-  discordEnabled: false,
-  discordWebhookUrl: "",
-  affiliate: {},
-  defaultSubId: "organic",
-  minRoiPercent: 25
-};
-
-async function getStorage(keys) {
-  return chrome.storage.local.get(keys);
+function getStorage(keys) {
+  return new Promise(function (resolve) {
+    chrome.storage.local.get(keys, function (data) {
+      resolve(data || {});
+    });
+  });
 }
 
-async function setStorage(data) {
-  return chrome.storage.local.set(data);
+function setStorage(obj) {
+  return new Promise(function (resolve) {
+    chrome.storage.local.set(obj, function () {
+      resolve();
+    });
+  });
 }
 
-async function ensureDefaults() {
-  var data = await getStorage([
-    "watchedItems",
-    "settings",
-    "sessionDeals",
-    "hotDeals",
-    "initialized",
-    NOTIFIED_KEY
-  ]);
-  var patch = {};
+function ensureAlarm() {
+  chrome.alarms.get(ALARM_NAME, function (existing) {
+    if (!existing) {
+      chrome.alarms.create(ALARM_NAME, { periodInMinutes: POLL_MINUTES });
+    }
+  });
+}
 
-  if (!Array.isArray(data.watchedItems)) patch.watchedItems = [];
-  if (!Array.isArray(data.sessionDeals)) patch.sessionDeals = [];
-  if (!Array.isArray(data.hotDeals)) patch.hotDeals = [];
-  if (!Array.isArray(data[NOTIFIED_KEY])) patch[NOTIFIED_KEY] = [];
-
-  if (!data.settings || typeof data.settings !== "object") {
-    patch.settings = Object.assign({}, DEFAULT_SETTINGS);
-  } else {
-    patch.settings = Object.assign({}, DEFAULT_SETTINGS, data.settings);
+function buildDealUrl(alert) {
+  var raw = alert.url || "";
+  if (!raw && alert.productId === "ss-demo-sony-wh1000") {
+    raw = chrome.runtime.getURL("demo/product-demo.html");
   }
-
-  if (!data.initialized) patch.initialized = true;
-
-  if (Object.keys(patch).length) await setStorage(patch);
-  return Object.assign({}, data, patch);
+  if (!raw) return "";
+  try {
+    return AffiliateRouter.buildUrl(raw, alert.merchant, {
+      subId: "notif_" + String(alert.productId || "deal").replace(/[^a-z0-9_-]/gi, "").slice(0, 40)
+    });
+  } catch (e) {
+    return raw;
+  }
 }
 
-async function scheduleAlarm() {
-  var state = await ensureDefaults();
-  var minutes = Math.max(1, Number(state.settings.pollMinutes) || POLL_MINUTES);
-  await chrome.alarms.clear(ALARM_NAME);
-  chrome.alarms.create(ALARM_NAME, { periodInMinutes: minutes });
-}
+function showNotification(alert) {
+  var arb = alert.arbitrage || {};
+  var title = "SmartSniper Pro · ROI " + (arb.roiNetPercent || 0) + "%";
+  var message =
+    alert.title +
+    "\nAcquisto €" +
+    Number(alert.purchasePrice).toFixed(2) +
+    " · FMV €" +
+    Number(alert.fairMarketValue).toFixed(2) +
+    "\nProfitto netto €" +
+    Number(arb.profit || 0).toFixed(2);
 
-function affiliateConfigFromSettings(settings) {
-  return Object.assign({}, AffiliateRouter.DEFAULT_CONFIG, settings.affiliate || {}, {
-    defaultSubId: settings.defaultSubId || "organic"
+  var dealUrl = buildDealUrl(alert);
+  var notifId = "sspro-" + String(alert.productId || Date.now());
+
+  return setStorage({ ["sspro_notif_url_" + notifId]: dealUrl }).then(function () {
+    chrome.notifications.create(notifId, {
+      type: "basic",
+      iconUrl: chrome.runtime.getURL("icons/icon128.png"),
+      title: title,
+      message: message,
+      priority: 2
+    });
   });
 }
 
-function buildAffiliated(url, merchant, settings, subId) {
-  return AffiliateRouter.buildAffiliateUrl(url, merchant, {
-    config: affiliateConfigFromSettings(settings),
-    subId: subId || settings.defaultSubId || "organic"
-  });
-}
+function syncAlerts(force) {
+  return ApiClient.getAlerts({ force: !!force }).then(function (res) {
+    var alerts = (res.data && res.data.alerts) || [];
+    return getStorage([NOTIFIED_KEY, "sspro_watchlist"]).then(function (store) {
+      var notified = store[NOTIFIED_KEY] || {};
+      var watchlist = store.sspro_watchlist || [];
+      var qualified = [];
 
-async function deliverWebhooks(alert, settings) {
-  var payload = {
-    event: "smartsniper.alert",
-    title: alert.title,
-    merchant: alert.merchant,
-    currentPrice: alert.currentPrice,
-    previousPrice: alert.previousPrice,
-    dropPercent: alert.dropPercent,
-    roiNetPercent: alert.arbitrage ? alert.arbitrage.roiNetPercent : null,
-    profit: alert.arbitrage ? alert.arbitrage.profit : null,
-    url: alert.affiliateUrl,
-    createdAt: alert.createdAt
-  };
+      alerts.forEach(function (alert) {
+        var arb =
+          alert.arbitrage ||
+          ArbitrageCalculator.calculate({
+            purchasePrice: alert.purchasePrice,
+            fairMarketValue: alert.fairMarketValue,
+            merchant: alert.merchant
+          });
+        alert.arbitrage = arb;
+        if (!arb.qualifies) return;
 
-  var results = { telegram: false, discord: false, mock: null };
-
-  if (settings.telegramEnabled && settings.telegramBotToken && settings.telegramChatId) {
-    try {
-      var text =
-        "*SmartSniper Pro*\n" +
-        alert.title +
-        "\n€" +
-        alert.currentPrice +
-        " (was €" +
-        alert.previousPrice +
-        ")\nROI netto: " +
-        (alert.arbitrage ? alert.arbitrage.roiNetPercent : "?") +
-        "%\n" +
-        alert.affiliateUrl;
-      var tgUrl =
-        "https://api.telegram.org/bot" +
-        settings.telegramBotToken +
-        "/sendMessage";
-      var tgRes = await fetch(tgUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: settings.telegramChatId,
-          text: text,
-          parse_mode: "Markdown",
-          disable_web_page_preview: false
-        })
+        qualified.push(alert);
+        if (!notified[alert.productId]) {
+          notified[alert.productId] = Date.now();
+          showNotification(alert);
+        }
       });
-      results.telegram = tgRes.ok;
-    } catch (e) {
-      results.telegram = false;
-    }
-  }
 
-  if (settings.discordEnabled && settings.discordWebhookUrl) {
-    try {
-      var discRes = await fetch(settings.discordWebhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: null,
-          embeds: [
-            {
-              title: "SmartSniper Pro — Deal",
-              description: alert.title,
-              url: alert.affiliateUrl,
-              color: 0x00d4aa,
-              fields: [
-                { name: "Prezzo", value: "€" + alert.currentPrice, inline: true },
-                {
-                  name: "ROI netto",
-                  value: (alert.arbitrage ? alert.arbitrage.roiNetPercent : 0) + "%",
-                  inline: true
-                },
-                {
-                  name: "Profitto stimato",
-                  value: "€" + (alert.arbitrage ? alert.arbitrage.profit : 0),
-                  inline: true
-                }
-              ]
-            }
-          ]
-        })
+      watchlist.forEach(function (item) {
+        if (!item || !item.url) return;
+        ApiClient.quotePrice(
+          {
+            productId: item.productId || item.url,
+            title: item.title || item.url,
+            merchant: item.merchant || AffiliateRouter.detectMerchant(item.url),
+            url: item.url,
+            purchasePrice: item.purchasePrice,
+            fairMarketValue: item.fairMarketValue
+          },
+          { force: !!force }
+        ).then(function (quoteRes) {
+          var data = quoteRes.data || {};
+          var arb = data.arbitrage;
+          if (!arb || !arb.qualifies) return;
+          var pid = (data.product && data.product.productId) || item.productId || item.url;
+          if (notified[pid]) return;
+          notified[pid] = Date.now();
+          showNotification({
+            productId: pid,
+            title: (data.product && data.product.title) || item.title || "Watch deal",
+            merchant: (data.product && data.product.merchant) || item.merchant,
+            url: item.url,
+            purchasePrice: arb.purchasePrice,
+            fairMarketValue: arb.fairMarketValue,
+            arbitrage: arb
+          });
+          setStorage({ [NOTIFIED_KEY]: notified });
+        });
       });
-      results.discord = discRes.ok;
-    } catch (e) {
-      results.discord = false;
-    }
-  }
 
-  results.mock = await ApiClient.dispatchWebhook(payload, settings);
-  return results;
-}
-
-async function showNotification(alert) {
-  var notificationId = "ss_" + String(alert.id || Date.now());
-  var roi = alert.arbitrage ? alert.arbitrage.roiNetPercent : 0;
-  var profit = alert.arbitrage ? alert.arbitrage.profit : 0;
-  await chrome.notifications.create(notificationId, {
-    type: "basic",
-    iconUrl: chrome.runtime.getURL("icons/icon128.png"),
-    title: "SmartSniper Pro — Deal trovato",
-    message:
-      alert.title +
-      " · €" +
-      alert.currentPrice +
-      " · ROI netto " +
-      roi +
-      "% · profitto €" +
-      profit,
-    priority: 2,
-    requireInteraction: true
-  });
-  return notificationId;
-}
-
-async function syncAlertsFromBackend(options) {
-  options = options || {};
-  var state = await ensureDefaults();
-  var settings = state.settings;
-  var response = await ApiClient.getAlerts();
-  var alerts = Array.isArray(response.alerts) ? response.alerts : [];
-  var notified = Array.isArray(state[NOTIFIED_KEY]) ? state[NOTIFIED_KEY].slice() : [];
-  var hotDeals = [];
-  var freshCount = 0;
-
-  for (var i = 0; i < alerts.length; i++) {
-    var alert = alerts[i];
-    if (!alert.arbitrage || !alert.arbitrage.qualifies) {
-      if (alert.arbitrage) {
-        continue;
-      }
-      var recalc = ArbitrageCalculator.calculate({
-        purchasePrice: alert.currentPrice,
-        fairMarketValue: alert.fairMarketValue || (alert.arbitrage && alert.arbitrage.fairMarketValue),
-        merchant: alert.merchant
+      return setStorage({
+        [NOTIFIED_KEY]: notified,
+        sspro_last_sync: Date.now(),
+        sspro_last_deals: qualified
+      }).then(function () {
+        return { ok: true, count: qualified.length, deals: qualified, cache: res.cache };
       });
-      if (!recalc.qualifies) continue;
-      alert.arbitrage = recalc;
-    }
-
-    alert.affiliateUrl = buildAffiliated(
-      alert.url,
-      alert.merchant,
-      settings,
-      "notify_" + (alert.productId || i)
-    );
-
-    hotDeals.push(alert);
-
-    var dedupeKey = String(alert.productId || alert.id) + "_" + String(alert.currentPrice);
-    var already = notified.indexOf(dedupeKey) !== -1;
-    if (!already || options.forceNotify) {
-      await showNotification(alert);
-      await deliverWebhooks(alert, settings);
-      if (!already) notified.push(dedupeKey);
-      freshCount += 1;
-    }
-  }
-
-  if (notified.length > 200) notified = notified.slice(notified.length - 200);
-
-  await setStorage({
-    hotDeals: hotDeals,
-    lastSyncAt: new Date().toISOString(),
-    lastSyncMeta: {
-      source: response._cache || response.source || "unknown",
-      count: hotDeals.length,
-      fresh: freshCount
-    },
-    notifiedAlertIds: notified
+    });
   });
-
-  return {
-    ok: true,
-    alerts: hotDeals,
-    fresh: freshCount,
-    cache: response._cache || null
-  };
 }
 
 chrome.runtime.onInstalled.addListener(function () {
-  ensureDefaults().then(scheduleAlarm);
+  ensureAlarm();
+  syncAlerts(true);
 });
 
 chrome.runtime.onStartup.addListener(function () {
-  ensureDefaults().then(scheduleAlarm);
+  ensureAlarm();
 });
 
 chrome.alarms.onAlarm.addListener(function (alarm) {
-  if (alarm.name === ALARM_NAME) {
-    syncAlertsFromBackend({ forceNotify: false }).catch(function (err) {
-      console.error("[SmartSniper Pro] backend sync failed", err);
-    });
+  if (alarm && alarm.name === ALARM_NAME) {
+    syncAlerts(false);
   }
 });
 
-chrome.notifications.onClicked.addListener(async function (notificationId) {
-  var state = await getStorage(["hotDeals", "settings"]);
-  var deals = Array.isArray(state.hotDeals) ? state.hotDeals : [];
-  var settings = Object.assign({}, DEFAULT_SETTINGS, state.settings || {});
-  var match = null;
-  for (var i = 0; i < deals.length; i++) {
-    if (("ss_" + String(deals[i].id)).indexOf(notificationId) === 0 || notificationId.indexOf(String(deals[i].productId)) !== -1) {
-      match = deals[i];
-      break;
-    }
-  }
-  if (!match && deals.length) match = deals[0];
-  if (match) {
-    var url = match.affiliateUrl || buildAffiliated(match.url, match.merchant, settings, "notif_click");
-    await chrome.tabs.create({ url: url });
-  }
-});
-
-chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-  (async function () {
-    await ensureDefaults();
-
-    if (message && message.type === "SYNC_NOW") {
-      ApiClient.clearCache();
-      var result = await syncAlertsFromBackend({ forceNotify: !!message.forceNotify });
-      sendResponse(result);
-      return;
-    }
-
-    if (message && message.type === "WATCH_URL") {
-      var quoted = await ApiClient.watchProduct(message.url, message.title);
-      var state = await getStorage(["watchedItems", "settings"]);
-      var items = Array.isArray(state.watchedItems) ? state.watchedItems.slice() : [];
-      var watched = quoted.watched;
-      var exists = false;
-      for (var i = 0; i < items.length; i++) {
-        if (items[i].url === watched.url || items[i].id === watched.id) {
-          items[i] = Object.assign({}, items[i], watched);
-          exists = true;
-          break;
-        }
-      }
-      if (!exists) items.push(watched);
-      await setStorage({ watchedItems: items });
-      sendResponse({ ok: true, watched: watched, items: items });
-      return;
-    }
-
-    if (message && message.type === "GET_STATE") {
-      var all = await getStorage([
-        "watchedItems",
-        "settings",
-        "sessionDeals",
-        "hotDeals",
-        "lastSyncAt",
-        "lastSyncMeta"
-      ]);
-      sendResponse({ ok: true, state: all });
-      return;
-    }
-
-    if (message && message.type === "SAVE_SETTINGS") {
-      var cur = await getStorage(["settings"]);
-      var next = Object.assign({}, DEFAULT_SETTINGS, cur.settings || {}, message.settings || {});
-      await setStorage({ settings: next });
-      await scheduleAlarm();
-      sendResponse({ ok: true, settings: next });
-      return;
-    }
-
-    if (message && message.type === "RECORD_DEAL") {
-      var dealsState = await getStorage(["sessionDeals"]);
-      var sessionDeals = Array.isArray(dealsState.sessionDeals) ? dealsState.sessionDeals.slice() : [];
-      var deal = Object.assign({}, message.deal || {}, {
-        id: "deal_" + Date.now(),
-        recordedAt: new Date().toISOString()
-      });
-      if (deal.url) {
-        var st = await getStorage(["settings"]);
-        var settings = Object.assign({}, DEFAULT_SETTINGS, st.settings || {});
-        deal.affiliateUrl = buildAffiliated(
-          deal.url,
-          deal.merchant,
-          settings,
-          "coupon_" + (deal.code || "x")
-        );
-      }
-      sessionDeals.unshift(deal);
-      if (sessionDeals.length > 50) sessionDeals = sessionDeals.slice(0, 50);
-      await setStorage({ sessionDeals: sessionDeals });
-      sendResponse({ ok: true, deal: deal, sessionDeals: sessionDeals });
-      return;
-    }
-
-    if (message && message.type === "BUILD_AFFILIATE_URL") {
-      var st2 = await getStorage(["settings"]);
-      var settings2 = Object.assign({}, DEFAULT_SETTINGS, st2.settings || {});
-      var affiliated = buildAffiliated(message.url, message.merchant, settings2, message.subId);
-      sendResponse({ ok: true, url: affiliated });
-      return;
-    }
-
-    if (message && message.type === "TEST_WEBHOOK") {
-      var st3 = await getStorage(["settings"]);
-      var settings3 = Object.assign({}, DEFAULT_SETTINGS, st3.settings || {});
-      var sample = {
-        id: "test_" + Date.now(),
-        title: "Test webhook SmartSniper Pro",
-        merchant: "demo",
-        url: "http://127.0.0.1:8765/demo/product-demo.html",
-        currentPrice: 278,
-        previousPrice: 379,
-        dropPercent: 26.6,
-        arbitrage: ArbitrageCalculator.calculate({
-          purchasePrice: 278,
-          fairMarketValue: 410,
-          merchant: "demo",
-          inboundShipping: 4.9,
-          outboundShipping: 6.5,
-          sizeClass: "small"
-        }),
-        createdAt: new Date().toISOString()
-      };
-      sample.affiliateUrl = buildAffiliated(sample.url, "demo", settings3, "webhook_test");
-      var delivered = await deliverWebhooks(sample, settings3);
-      sendResponse({ ok: true, delivered: delivered, sample: sample });
-      return;
-    }
-
-    sendResponse({ ok: false, error: "unknown_message" });
-  })().catch(function (err) {
-    sendResponse({ ok: false, error: String(err && err.message ? err.message : err) });
+chrome.notifications.onClicked.addListener(function (notifId) {
+  getStorage(["sspro_notif_url_" + notifId]).then(function (data) {
+    var url = data["sspro_notif_url_" + notifId];
+    if (url) chrome.tabs.create({ url: url });
   });
-
-  return true;
 });
+
+chrome.runtime.onMessage.addListener(function (msg, _sender, sendResponse) {
+  if (!msg || !msg.type) return;
+
+  if (msg.type === "SSPRO_SYNC_NOW") {
+    syncAlerts(true)
+      .then(function (result) {
+        sendResponse(result);
+      })
+      .catch(function (err) {
+        sendResponse({ ok: false, error: String(err && err.message ? err.message : err) });
+      });
+    return true;
+  }
+
+  if (msg.type === "SSPRO_GET_DEALS") {
+    getStorage(["sspro_last_deals", "sspro_last_sync"]).then(function (data) {
+      sendResponse({
+        ok: true,
+        deals: data.sspro_last_deals || [],
+        lastSync: data.sspro_last_sync || null
+      });
+    });
+    return true;
+  }
+
+  if (msg.type === "SSPRO_ADD_WATCH") {
+    getStorage(["sspro_watchlist"]).then(function (data) {
+      var list = data.sspro_watchlist || [];
+      var item = msg.payload || {};
+      var exists = list.some(function (row) {
+        return row.url === item.url;
+      });
+      if (!exists) list.push(item);
+      setStorage({ sspro_watchlist: list }).then(function () {
+        ApiClient.watch(item, { force: true }).then(function () {
+          sendResponse({ ok: true, watchlist: list });
+        });
+      });
+    });
+    return true;
+  }
+
+  if (msg.type === "SSPRO_GET_COUPONS") {
+    ApiClient.getCoupons(msg.merchant || "demo", { force: !!msg.force })
+      .then(function (res) {
+        sendResponse({ ok: true, coupons: (res.data && res.data.coupons) || [], cache: res.cache });
+      })
+      .catch(function (err) {
+        sendResponse({ ok: false, error: String(err && err.message ? err.message : err) });
+      });
+    return true;
+  }
+});
+
+ensureAlarm();
