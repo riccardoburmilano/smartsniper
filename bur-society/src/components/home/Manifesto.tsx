@@ -9,9 +9,10 @@ export function Manifesto() {
 
   return (
     <section className="relative min-h-dvh overflow-hidden">
+      {/* Desktop-only edge plane — full-width absolute would cover mobile copy */}
       <div
         aria-hidden
-        className="bw-plane absolute inset-y-0 right-0 w-full md:w-[46%]"
+        className="bw-plane absolute inset-y-0 right-0 hidden w-[46%] md:block"
       />
 
       <div className="relative mx-auto grid min-h-dvh max-w-[1400px] grid-cols-1 md:grid-cols-12">
@@ -25,12 +26,12 @@ export function Manifesto() {
             Milano · Accademia & Community
           </motion.p>
 
-          <div className="my-16 md:my-0">
+          <div className="my-14 md:my-0">
             <motion.h1
               initial={reduce ? false : { opacity: 0, y: 36 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-              className="font-display text-[clamp(3.4rem,12vw,8.5rem)] leading-[0.86] tracking-tightest text-ink"
+              className="font-display text-[clamp(3.4rem,14vw,8.5rem)] leading-[0.86] tracking-tightest text-ink"
             >
               Bur
               <br />
@@ -88,6 +89,24 @@ export function Manifesto() {
           </motion.div>
         </div>
 
+        {/* Mobile visual band */}
+        <motion.div
+          initial={reduce ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.9, delay: 0.35 }}
+          className="relative mt-10 min-h-[38vh] md:hidden"
+        >
+          <div className="absolute inset-0 bw-plane" />
+          <div className="absolute inset-0 flex items-end p-6">
+            <p className="font-display text-4xl leading-[0.95] tracking-tightest text-cream">
+              Cult
+              <br />
+              first.
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Desktop visual column */}
         <div className="relative hidden md:col-span-5 md:block">
           <motion.div
             initial={reduce ? false : { opacity: 0, scale: 1.04 }}
